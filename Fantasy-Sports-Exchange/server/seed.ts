@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { db } from "./db";
-import { playerCards } from "@shared/schema";
+import { playerCards, competitions } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 const seedPlayers = [
@@ -82,4 +82,67 @@ export async function seedDatabase() {
     }
   }
   console.log(`Seeded ${marketplaceCards.length} marketplace listings`);
+}
+
+export async function seedCompetitions() {
+  const existing = await storage.getCompetitions();
+  if (existing.length > 0) {
+    console.log(`Already have ${existing.length} competitions, skipping seed`);
+    return;
+  }
+
+  console.log("Seeding competitions...");
+  const now = new Date();
+  const endOfWeek = new Date(now);
+  endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const nextWeekEnd = new Date(endOfWeek);
+  nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+
+  await storage.createCompetition({
+    name: "Common Cup - GW1",
+    tier: "common",
+    entryFee: 0,
+    status: "open",
+    gameWeek: 1,
+    startDate: now,
+    endDate: endOfWeek,
+    prizeCardRarity: "rare",
+  });
+
+  await storage.createCompetition({
+    name: "Rare Championship - GW1",
+    tier: "rare",
+    entryFee: 20,
+    status: "open",
+    gameWeek: 1,
+    startDate: now,
+    endDate: endOfWeek,
+    prizeCardRarity: "unique",
+  });
+
+  await storage.createCompetition({
+    name: "Common Cup - GW2",
+    tier: "common",
+    entryFee: 0,
+    status: "open",
+    gameWeek: 2,
+    startDate: endOfWeek,
+    endDate: nextWeekEnd,
+    prizeCardRarity: "rare",
+  });
+
+  await storage.createCompetition({
+    name: "Rare Championship - GW2",
+    tier: "rare",
+    entryFee: 20,
+    status: "open",
+    gameWeek: 2,
+    startDate: endOfWeek,
+    endDate: nextWeekEnd,
+    prizeCardRarity: "unique",
+  });
+
+  console.log("Seeded 4 competitions");
 }

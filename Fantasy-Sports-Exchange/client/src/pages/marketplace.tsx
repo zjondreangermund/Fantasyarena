@@ -14,8 +14,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { type PlayerCardWithPlayer, type Wallet } from "@shared/schema";
-import { Search, Filter, ShoppingCart, Tag, DollarSign } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { type PlayerCardWithPlayer, type Wallet, SITE_FEE_RATE } from "@shared/schema";
+import { Search, Filter, ShoppingCart, Tag, DollarSign, ArrowLeftRight, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/auth-utils";
 
@@ -26,6 +33,10 @@ export default function MarketplacePage() {
   const [buyCard, setBuyCard] = useState<PlayerCardWithPlayer | null>(null);
   const [sellCard, setSellCard] = useState<PlayerCardWithPlayer | null>(null);
   const [sellPrice, setSellPrice] = useState("");
+  const [swapCard, setSwapCard] = useState<PlayerCardWithPlayer | null>(null);
+  const [selectedSwapCard, setSelectedSwapCard] = useState<PlayerCardWithPlayer | null>(null);
+  const [topUpAmount, setTopUpAmount] = useState("0");
+  const [topUpDirection, setTopUpDirection] = useState("none");
 
   const { data: listings, isLoading } = useQuery<PlayerCardWithPlayer[]>({
     queryKey: ["/api/marketplace"],
@@ -83,6 +94,31 @@ export default function MarketplacePage() {
     },
   });
 
+  const swapMutation = useMutation({
+    mutationFn: async (data: { offeredCardId: number; requestedCardId: number; topUpAmount: number; topUpDirection: string }) => {
+      const res = await apiRequest("POST", "/api/swap/offer", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/wallet"] });
+      setSwapCard(null);
+      setSelectedSwapCard(null);
+      setTopUpAmount("0");
+      setTopUpDirection("none");
+      toast({ title: "Swap offer sent!" });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({ title: "Unauthorized", variant: "destructive" });
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+        return;
+      }
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const filteredListings = listings?.filter((card) => {
     const matchesSearch =
       !search ||
@@ -96,10 +132,13 @@ export default function MarketplacePage() {
     (c) => c.rarity !== "common" && !c.forSale,
   );
 
+  const swappableCards = myCards?.filter(c => c.rarity !== "common" && !c.forSale) || [];
+
   const rarityFilters = [
     { value: "all", label: "All" },
     { value: "rare", label: "Rare" },
     { value: "unique", label: "Unique" },
+    { value: "epic", label: "Epic" },
     { value: "legendary", label: "Legendary" },
   ];
 
@@ -160,7 +199,7 @@ export default function MarketplacePage() {
         ) : filteredListings && filteredListings.length > 0 ? (
           <div className="flex flex-wrap gap-4">
             {filteredListings.map((card) => (
-              <div key={card.id} className="relative">
+              <div key={card.id} className="relative group">
                 <PlayerCard
                   card={card}
                   size="md"
@@ -168,6 +207,16 @@ export default function MarketplacePage() {
                   selectable
                   onClick={() => setBuyCard(card)}
                 />
+                <div className="absolute bottom-1 left-1 right-1 z-30 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="sm" variant="secondary" className="flex-1 h-7 text-xs" onClick={(e) => { e.stopPropagation(); setBuyCard(card); }}>
+                    <DollarSign className="w-3 h-3 mr-0.5" /> Buy
+                  </Button>
+                  {swappableCards.length > 0 && (
+                    <Button size="sm" variant="secondary" className="flex-1 h-7 text-xs" onClick={(e) => { e.stopPropagation(); setSwapCard(card); setSelectedSwapCard(null); }}>
+                      <ArrowLeftRight className="w-3 h-3 mr-0.5" /> Swap
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -189,12 +238,18 @@ export default function MarketplacePage() {
           {buyCard && (
             <div className="flex flex-col items-center gap-4 py-4">
               <PlayerCard card={buyCard} size="md" showPrice />
-              <div className="text-center">
+              <div className="text-center space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  Your balance: ${wallet?.balance?.toFixed(2) || "0.00"}
+                  Your balance: N${wallet?.balance?.toFixed(2) || "0.00"}
                 </p>
-                <p className="text-lg font-bold text-foreground mt-1">
-                  Price: ${buyCard.price?.toFixed(2)}
+                <p className="text-lg font-bold text-foreground">
+                  Price: N${buyCard.price?.toFixed(2)}
+                </p>
+                <p className="text-sm text-amber-500">
+                  + 8% fee: N${((buyCard.price || 0) * SITE_FEE_RATE).toFixed(2)}
+                </p>
+                <p className="text-sm font-semibold text-foreground">
+                  Total: N${((buyCard.price || 0) * (1 + SITE_FEE_RATE)).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -220,8 +275,11 @@ export default function MarketplacePage() {
             <DialogTitle>Sell a Card</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-2">
               Choose a card and set your price. Common cards cannot be sold.
+            </p>
+            <p className="text-xs text-amber-500 mb-4">
+              Note: An 8% fee applies to sales. Buyer also pays 8% on purchase.
             </p>
             {sellableCards && sellableCards.length > 0 && (
               <>
@@ -248,6 +306,11 @@ export default function MarketplacePage() {
                     data-testid="input-sell-price"
                   />
                 </div>
+                {sellPrice && parseFloat(sellPrice) > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    You'll receive: N${(parseFloat(sellPrice) * (1 - SITE_FEE_RATE)).toFixed(2)} after 8% fee
+                  </p>
+                )}
               </>
             )}
           </div>
@@ -272,6 +335,91 @@ export default function MarketplacePage() {
               data-testid="button-confirm-sell"
             >
               {sellMutation.isPending ? "Listing..." : "List for Sale"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!swapCard} onOpenChange={() => { setSwapCard(null); setSelectedSwapCard(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5" /> Swap Offer
+            </DialogTitle>
+          </DialogHeader>
+          {swapCard && (
+            <div className="py-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Card You Want</p>
+                  <PlayerCard card={swapCard} size="sm" showPrice />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Your Card to Offer</p>
+                  {selectedSwapCard ? (
+                    <PlayerCard card={selectedSwapCard} size="sm" />
+                  ) : (
+                    <div className="w-36 h-52 rounded-md border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground text-center px-2">Select a card below</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-2">Select a card to offer:</p>
+              <div className="flex flex-wrap gap-2 mb-4 max-h-40 overflow-auto">
+                {swappableCards.map(c => (
+                  <div
+                    key={c.id}
+                    className={`cursor-pointer transition-all ${selectedSwapCard?.id === c.id ? "ring-2 ring-primary rounded-md" : ""}`}
+                    onClick={() => setSelectedSwapCard(c)}
+                  >
+                    <PlayerCard card={c} size="sm" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3 p-3 bg-muted/50 rounded-md">
+                <p className="text-sm font-medium">Top Up (optional)</p>
+                <Select value={topUpDirection} onValueChange={setTopUpDirection}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No top up" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No top up</SelectItem>
+                    <SelectItem value="offerer_pays">I'll add cash</SelectItem>
+                    <SelectItem value="receiver_pays">They add cash</SelectItem>
+                  </SelectContent>
+                </Select>
+                {topUpDirection !== "none" && (
+                  <Input
+                    type="number"
+                    placeholder="Top up amount..."
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                )}
+                <p className="text-xs text-amber-500">
+                  Swap fee: 8% of card price (N${((swapCard.price || 0) * SITE_FEE_RATE).toFixed(2)}) split between both parties
+                  (N${((swapCard.price || 0) * SITE_FEE_RATE / 2).toFixed(2)} each)
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSwapCard(null); setSelectedSwapCard(null); }}>Cancel</Button>
+            <Button
+              onClick={() => swapCard && selectedSwapCard && swapMutation.mutate({
+                offeredCardId: selectedSwapCard.id,
+                requestedCardId: swapCard.id,
+                topUpAmount: parseFloat(topUpAmount) || 0,
+                topUpDirection,
+              })}
+              disabled={!selectedSwapCard || swapMutation.isPending || (topUpDirection !== "none" && (!topUpAmount || parseFloat(topUpAmount) <= 0 || isNaN(parseFloat(topUpAmount))))}
+            >
+              {swapMutation.isPending ? "Sending..." : "Send Swap Offer"}
             </Button>
           </DialogFooter>
         </DialogContent>

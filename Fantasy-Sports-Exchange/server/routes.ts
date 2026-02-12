@@ -2,8 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
-import { seedDatabase } from "./seed";
+import { seedDatabase, seedCompetitions } from "./seed";
 import { z } from "zod";
+import { SITE_FEE_RATE } from "@shared/schema";
 
 function randomScores(): number[] {
   return Array.from({ length: 5 }, () => Math.floor(Math.random() * 80) + 10);
@@ -31,6 +32,24 @@ const completeOnboardingSchema = z.object({
   cardIds: z.array(z.number()).length(5, "Must select exactly 5 cards"),
 });
 
+const joinCompetitionSchema = z.object({
+  competitionId: z.number().int().positive(),
+  cardIds: z.array(z.number()).length(5, "Must select exactly 5 cards"),
+  captainId: z.number().int().positive(),
+});
+
+const swapOfferSchema = z.object({
+  offeredCardId: z.number().int().positive(),
+  requestedCardId: z.number().int().positive(),
+  topUpAmount: z.number().min(0).default(0),
+  topUpDirection: z.enum(["none", "offerer_pays", "receiver_pays"]).default("none"),
+});
+
+const respondSwapSchema = z.object({
+  offerId: z.number().int().positive(),
+  action: z.enum(["accept", "reject"]),
+});
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -39,6 +58,7 @@ export async function registerRoutes(
   registerAuthRoutes(app);
 
   await seedDatabase();
+  await seedCompetitions();
 
   app.get("/api/wallet", isAuthenticated, async (req: any, res) => {
     try {
@@ -68,15 +88,18 @@ export async function registerRoutes(
         wallet = await storage.createWallet({ userId, balance: 0 });
       }
 
-      const updated = await storage.updateWalletBalance(userId, amount);
+      const fee = +(amount * SITE_FEE_RATE).toFixed(2);
+      const netAmount = +(amount - fee).toFixed(2);
+
+      const updated = await storage.updateWalletBalance(userId, netAmount);
       await storage.createTransaction({
         userId,
         type: "deposit",
-        amount,
-        description: `Deposited $${amount.toFixed(2)}`,
+        amount: netAmount,
+        description: `Deposited N$${amount.toFixed(2)} (N$${fee.toFixed(2)} fee)`,
       });
 
-      res.json(updated);
+      res.json({ ...updated, fee });
     } catch (error) {
       console.error("Error depositing:", error);
       res.status(500).json({ message: "Failed to deposit" });
@@ -317,27 +340,33 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Cannot buy your own card" });
       }
 
+      const price = card.price || 0;
+      const fee = +(price * SITE_FEE_RATE).toFixed(2);
+      const totalCost = +(price + fee).toFixed(2);
+
       const wallet = await storage.getWallet(userId);
-      if (!wallet || wallet.balance < (card.price || 0)) {
-        return res.status(400).json({ message: "Insufficient funds" });
+      if (!wallet || wallet.balance < totalCost) {
+        return res.status(400).json({ message: `Insufficient funds. Total cost: N$${totalCost.toFixed(2)} (N$${fee.toFixed(2)} fee)` });
       }
 
-      await storage.updateWalletBalance(userId, -(card.price || 0));
+      await storage.updateWalletBalance(userId, -totalCost);
       if (card.ownerId) {
-        await storage.updateWalletBalance(card.ownerId, card.price || 0);
+        const sellerFee = +(price * SITE_FEE_RATE).toFixed(2);
+        const sellerNet = +(price - sellerFee).toFixed(2);
+        await storage.updateWalletBalance(card.ownerId, sellerNet);
         await storage.createTransaction({
           userId: card.ownerId,
           type: "sale",
-          amount: card.price || 0,
-          description: `Sold card #${cardId}`,
+          amount: sellerNet,
+          description: `Sold card #${cardId} for N$${price.toFixed(2)} (N$${sellerFee.toFixed(2)} fee)`,
         });
       }
 
       await storage.createTransaction({
         userId,
         type: "purchase",
-        amount: card.price || 0,
-        description: `Purchased card #${cardId}`,
+        amount: totalCost,
+        description: `Purchased card #${cardId} for N$${price.toFixed(2)} (N$${fee.toFixed(2)} fee)`,
       });
 
       await storage.updatePlayerCard(cardId, {
@@ -346,7 +375,7 @@ export async function registerRoutes(
         price: 0,
       });
 
-      res.json({ success: true });
+      res.json({ success: true, fee });
     } catch (error) {
       console.error("Error buying card:", error);
       res.status(500).json({ message: "Failed to buy card" });
@@ -379,6 +408,281 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error selling card:", error);
       res.status(500).json({ message: "Failed to sell card" });
+    }
+  });
+
+  // Competition routes
+  app.get("/api/competitions", isAuthenticated, async (req: any, res) => {
+    try {
+      const comps = await storage.getCompetitions();
+      const result = [];
+      for (const comp of comps) {
+        const entries = await storage.getCompetitionEntries(comp.id);
+        result.push({ ...comp, entryCount: entries.length, entries });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting competitions:", error);
+      res.status(500).json({ message: "Failed to get competitions" });
+    }
+  });
+
+  app.get("/api/competitions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const comp = await storage.getCompetition(parseInt(req.params.id));
+      if (!comp) return res.status(404).json({ message: "Competition not found" });
+      const entries = await storage.getCompetitionEntries(comp.id);
+      res.json({ ...comp, entryCount: entries.length, entries });
+    } catch (error) {
+      console.error("Error getting competition:", error);
+      res.status(500).json({ message: "Failed to get competition" });
+    }
+  });
+
+  app.post("/api/competitions/join", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = joinCompetitionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.issues[0]?.message || "Invalid input" });
+      }
+      const { competitionId, cardIds, captainId } = parsed.data;
+
+      const comp = await storage.getCompetition(competitionId);
+      if (!comp) return res.status(404).json({ message: "Competition not found" });
+      if (comp.status !== "open") return res.status(400).json({ message: "Competition is not open for entries" });
+
+      const existing = await storage.getCompetitionEntry(competitionId, userId);
+      if (existing) return res.status(400).json({ message: "Already entered this competition" });
+
+      if (!cardIds.includes(captainId)) {
+        return res.status(400).json({ message: "Captain must be in the lineup" });
+      }
+
+      for (const cardId of cardIds) {
+        const card = await storage.getPlayerCardWithPlayer(cardId);
+        if (!card || card.ownerId !== userId) {
+          return res.status(400).json({ message: "Invalid card selection" });
+        }
+        if (card.forSale) {
+          return res.status(400).json({ message: "Cannot use a listed card in competition" });
+        }
+      }
+
+      if (comp.entryFee > 0) {
+        const wallet = await storage.getWallet(userId);
+        if (!wallet || wallet.balance < comp.entryFee) {
+          return res.status(400).json({ message: "Insufficient funds for entry fee" });
+        }
+        await storage.updateWalletBalance(userId, -comp.entryFee);
+        await storage.createTransaction({
+          userId,
+          type: "entry_fee",
+          amount: comp.entryFee,
+          description: `Entry fee for ${comp.name}`,
+        });
+      }
+
+      const entry = await storage.createCompetitionEntry({
+        competitionId,
+        userId,
+        lineupCardIds: cardIds,
+        captainId,
+        totalScore: 0,
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error joining competition:", error);
+      res.status(500).json({ message: "Failed to join competition" });
+    }
+  });
+
+  app.get("/api/competitions/:id/results", isAuthenticated, async (req: any, res) => {
+    try {
+      const comp = await storage.getCompetition(parseInt(req.params.id));
+      if (!comp) return res.status(404).json({ message: "Competition not found" });
+      const entries = await storage.getCompetitionEntries(comp.id);
+      res.json({ competition: comp, entries });
+    } catch (error) {
+      console.error("Error getting results:", error);
+      res.status(500).json({ message: "Failed to get results" });
+    }
+  });
+
+  app.get("/api/rewards", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const rewards = await storage.getUserRewards(userId);
+      const result = [];
+      for (const r of rewards) {
+        const comp = await storage.getCompetition(r.competitionId);
+        let prizeCard = null;
+        if (r.prizeCardId) {
+          prizeCard = await storage.getPlayerCardWithPlayer(r.prizeCardId);
+        }
+        result.push({ ...r, competition: comp, prizeCard });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting rewards:", error);
+      res.status(500).json({ message: "Failed to get rewards" });
+    }
+  });
+
+  // Swap routes
+  app.post("/api/swap/offer", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = swapOfferSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.issues[0]?.message || "Invalid input" });
+      }
+      const { offeredCardId, requestedCardId, topUpAmount, topUpDirection } = parsed.data;
+
+      const offeredCard = await storage.getPlayerCard(offeredCardId);
+      if (!offeredCard || offeredCard.ownerId !== userId) {
+        return res.status(400).json({ message: "You don't own the offered card" });
+      }
+      if (offeredCard.forSale) {
+        return res.status(400).json({ message: "Cannot swap a listed card" });
+      }
+
+      const requestedCard = await storage.getPlayerCard(requestedCardId);
+      if (!requestedCard || !requestedCard.forSale) {
+        return res.status(400).json({ message: "Requested card is not available for swap" });
+      }
+      if (requestedCard.ownerId === userId) {
+        return res.status(400).json({ message: "Cannot swap with yourself" });
+      }
+
+      const basePrice = requestedCard.price || 0;
+      const swapFee = +(basePrice * SITE_FEE_RATE).toFixed(2);
+      const halfFee = +(swapFee / 2).toFixed(2);
+
+      const offererWallet = await storage.getWallet(userId);
+      let offererCost = halfFee;
+      if (topUpDirection === "offerer_pays") offererCost += topUpAmount;
+      if (!offererWallet || offererWallet.balance < offererCost) {
+        return res.status(400).json({ message: "Insufficient funds for swap fee" });
+      }
+
+      const offer = await storage.createSwapOffer({
+        offererUserId: userId,
+        receiverUserId: requestedCard.ownerId!,
+        offeredCardId,
+        requestedCardId,
+        topUpAmount,
+        topUpDirection,
+      });
+
+      res.json(offer);
+    } catch (error) {
+      console.error("Error creating swap offer:", error);
+      res.status(500).json({ message: "Failed to create swap offer" });
+    }
+  });
+
+  app.post("/api/swap/respond", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = respondSwapSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.issues[0]?.message || "Invalid input" });
+      }
+      const { offerId, action } = parsed.data;
+
+      const offer = await storage.getSwapOffer(offerId);
+      if (!offer || offer.receiverUserId !== userId) {
+        return res.status(400).json({ message: "Swap offer not found" });
+      }
+      if (offer.status !== "pending") {
+        return res.status(400).json({ message: "Swap offer is no longer pending" });
+      }
+
+      if (action === "reject") {
+        await storage.updateSwapOffer(offerId, { status: "rejected" });
+        return res.json({ success: true });
+      }
+
+      const requestedCard = await storage.getPlayerCard(offer.requestedCardId);
+      const offeredCard = await storage.getPlayerCard(offer.offeredCardId);
+      if (!requestedCard || !offeredCard) {
+        return res.status(400).json({ message: "Cards no longer available" });
+      }
+
+      const basePrice = requestedCard.price || 0;
+      const swapFee = +(basePrice * SITE_FEE_RATE).toFixed(2);
+      const halfFee = +(swapFee / 2).toFixed(2);
+
+      await storage.updateWalletBalance(offer.offererUserId, -halfFee);
+      await storage.createTransaction({
+        userId: offer.offererUserId,
+        type: "swap_fee",
+        amount: halfFee,
+        description: `Swap fee for card #${offer.requestedCardId}`,
+      });
+
+      await storage.updateWalletBalance(userId, -halfFee);
+      await storage.createTransaction({
+        userId,
+        type: "swap_fee",
+        amount: halfFee,
+        description: `Swap fee for card #${offer.offeredCardId}`,
+      });
+
+      if (offer.topUpAmount && offer.topUpAmount > 0) {
+        if (offer.topUpDirection === "offerer_pays") {
+          await storage.updateWalletBalance(offer.offererUserId, -offer.topUpAmount);
+          await storage.updateWalletBalance(userId, offer.topUpAmount);
+        } else if (offer.topUpDirection === "receiver_pays") {
+          await storage.updateWalletBalance(userId, -offer.topUpAmount);
+          await storage.updateWalletBalance(offer.offererUserId, offer.topUpAmount);
+        }
+      }
+
+      await storage.updatePlayerCard(offer.offeredCardId, { ownerId: userId, forSale: false, price: 0 });
+      await storage.updatePlayerCard(offer.requestedCardId, { ownerId: offer.offererUserId, forSale: false, price: 0 });
+
+      await storage.updateSwapOffer(offerId, { status: "accepted" });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error responding to swap:", error);
+      res.status(500).json({ message: "Failed to respond to swap" });
+    }
+  });
+
+  app.get("/api/swap/offers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const offers = await storage.getUserSwapOffers(userId);
+      const result = [];
+      for (const offer of offers) {
+        const offeredCard = await storage.getPlayerCardWithPlayer(offer.offeredCardId);
+        const requestedCard = await storage.getPlayerCardWithPlayer(offer.requestedCardId);
+        result.push({ ...offer, offeredCard, requestedCard });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting swap offers:", error);
+      res.status(500).json({ message: "Failed to get swap offers" });
+    }
+  });
+
+  app.get("/api/swap/for-card/:cardId", isAuthenticated, async (req: any, res) => {
+    try {
+      const cardId = parseInt(req.params.cardId);
+      const offers = await storage.getSwapOffersForCard(cardId);
+      const result = [];
+      for (const offer of offers) {
+        const offeredCard = await storage.getPlayerCardWithPlayer(offer.offeredCardId);
+        result.push({ ...offer, offeredCard });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting swap offers for card:", error);
+      res.status(500).json({ message: "Failed to get swap offers" });
     }
   });
 

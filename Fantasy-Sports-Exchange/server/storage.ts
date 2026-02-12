@@ -6,10 +6,14 @@ import {
   type Lineup, type InsertLineup,
   type UserOnboarding, type InsertOnboarding,
   type PlayerCardWithPlayer,
+  type Competition, type InsertCompetition,
+  type CompetitionEntry, type InsertCompetitionEntry,
+  type SwapOffer, type InsertSwapOffer,
   players, playerCards, wallets, transactions, lineups, userOnboarding,
+  competitions, competitionEntries, swapOffers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   getPlayers(): Promise<Player[]>;
@@ -39,6 +43,23 @@ export interface IStorage {
 
   getPlayerCount(): Promise<number>;
   getRandomPlayers(count: number): Promise<Player[]>;
+
+  getCompetitions(): Promise<Competition[]>;
+  getCompetition(id: number): Promise<Competition | undefined>;
+  createCompetition(comp: InsertCompetition): Promise<Competition>;
+  updateCompetition(id: number, updates: Partial<Competition>): Promise<Competition | undefined>;
+  getCompetitionEntries(competitionId: number): Promise<CompetitionEntry[]>;
+  getCompetitionEntry(competitionId: number, userId: string): Promise<CompetitionEntry | undefined>;
+  createCompetitionEntry(entry: InsertCompetitionEntry): Promise<CompetitionEntry>;
+  updateCompetitionEntry(id: number, updates: Partial<CompetitionEntry>): Promise<CompetitionEntry | undefined>;
+  getUserCompetitions(userId: string): Promise<CompetitionEntry[]>;
+  getUserRewards(userId: string): Promise<CompetitionEntry[]>;
+
+  getSwapOffer(id: number): Promise<SwapOffer | undefined>;
+  getSwapOffersForCard(cardId: number): Promise<SwapOffer[]>;
+  getUserSwapOffers(userId: string): Promise<SwapOffer[]>;
+  createSwapOffer(offer: InsertSwapOffer): Promise<SwapOffer>;
+  updateSwapOffer(id: number, updates: Partial<SwapOffer>): Promise<SwapOffer | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -193,6 +214,85 @@ export class DatabaseStorage implements IStorage {
       .from(players)
       .orderBy(sql`RANDOM()`)
       .limit(count);
+  }
+
+  async getCompetitions(): Promise<Competition[]> {
+    return db.select().from(competitions).orderBy(desc(competitions.createdAt));
+  }
+
+  async getCompetition(id: number): Promise<Competition | undefined> {
+    const [comp] = await db.select().from(competitions).where(eq(competitions.id, id));
+    return comp || undefined;
+  }
+
+  async createCompetition(comp: InsertCompetition): Promise<Competition> {
+    const [created] = await db.insert(competitions).values(comp as any).returning();
+    return created;
+  }
+
+  async updateCompetition(id: number, updates: Partial<Competition>): Promise<Competition | undefined> {
+    const [updated] = await db.update(competitions).set(updates as any).where(eq(competitions.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getCompetitionEntries(competitionId: number): Promise<CompetitionEntry[]> {
+    return db.select().from(competitionEntries)
+      .where(eq(competitionEntries.competitionId, competitionId))
+      .orderBy(desc(competitionEntries.totalScore));
+  }
+
+  async getCompetitionEntry(competitionId: number, userId: string): Promise<CompetitionEntry | undefined> {
+    const [entry] = await db.select().from(competitionEntries)
+      .where(and(eq(competitionEntries.competitionId, competitionId), eq(competitionEntries.userId, userId)));
+    return entry || undefined;
+  }
+
+  async createCompetitionEntry(entry: InsertCompetitionEntry): Promise<CompetitionEntry> {
+    const [created] = await db.insert(competitionEntries).values(entry as any).returning();
+    return created;
+  }
+
+  async updateCompetitionEntry(id: number, updates: Partial<CompetitionEntry>): Promise<CompetitionEntry | undefined> {
+    const [updated] = await db.update(competitionEntries).set(updates as any).where(eq(competitionEntries.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getUserCompetitions(userId: string): Promise<CompetitionEntry[]> {
+    return db.select().from(competitionEntries).where(eq(competitionEntries.userId, userId));
+  }
+
+  async getUserRewards(userId: string): Promise<CompetitionEntry[]> {
+    return db.select().from(competitionEntries)
+      .where(and(
+        eq(competitionEntries.userId, userId),
+        sql`(${competitionEntries.prizeAmount} > 0 OR ${competitionEntries.prizeCardId} IS NOT NULL)`
+      ));
+  }
+
+  async getSwapOffer(id: number): Promise<SwapOffer | undefined> {
+    const [offer] = await db.select().from(swapOffers).where(eq(swapOffers.id, id));
+    return offer || undefined;
+  }
+
+  async getSwapOffersForCard(cardId: number): Promise<SwapOffer[]> {
+    return db.select().from(swapOffers)
+      .where(and(eq(swapOffers.requestedCardId, cardId), eq(swapOffers.status, "pending")));
+  }
+
+  async getUserSwapOffers(userId: string): Promise<SwapOffer[]> {
+    return db.select().from(swapOffers)
+      .where(sql`(${swapOffers.offererUserId} = ${userId} OR ${swapOffers.receiverUserId} = ${userId})`)
+      .orderBy(desc(swapOffers.createdAt));
+  }
+
+  async createSwapOffer(offer: InsertSwapOffer): Promise<SwapOffer> {
+    const [created] = await db.insert(swapOffers).values(offer as any).returning();
+    return created;
+  }
+
+  async updateSwapOffer(id: number, updates: Partial<SwapOffer>): Promise<SwapOffer | undefined> {
+    const [updated] = await db.update(swapOffers).set(updates as any).where(eq(swapOffers.id, id)).returning();
+    return updated || undefined;
   }
 }
 

@@ -25,6 +25,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
+  { title: "Competitions", href: "/competitions", icon: Trophy },
   { title: "Collection", href: "/collection", icon: Library },
   { title: "Marketplace", href: "/marketplace", icon: ShoppingCart },
   { title: "Wallet", href: "/wallet", icon: Wallet },

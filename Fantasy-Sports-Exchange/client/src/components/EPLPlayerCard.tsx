@@ -60,6 +60,7 @@ const rarityTheme: Record<CardRarity, {
   windowBg: string;
   windowPattern: string;
   windowBorder: string;
+  studioGlow: string;
 }> = {
   common: {
     face: "linear-gradient(160deg, #8e9aaf 0%, #b8c4d4 25%, #a0aec0 50%, #8e9aaf 75%, #7a8899 100%)",
@@ -73,6 +74,7 @@ const rarityTheme: Record<CardRarity, {
     windowBg: "linear-gradient(135deg, rgba(80,95,115,0.6), rgba(60,75,95,0.8))",
     windowPattern: "repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 12px)",
     windowBorder: "rgba(180,195,215,0.4)",
+    studioGlow: "",
   },
   rare: {
     face: "linear-gradient(160deg, #b91c1c 0%, #dc2626 20%, #ef4444 45%, #dc2626 65%, #b91c1c 90%, #991b1b 100%)",
@@ -86,6 +88,7 @@ const rarityTheme: Record<CardRarity, {
     windowBg: "linear-gradient(135deg, rgba(153,27,27,0.5), rgba(127,29,29,0.7))",
     windowPattern: "repeating-linear-gradient(60deg, transparent, transparent 8px, rgba(255,255,255,0.04) 8px, rgba(255,255,255,0.04) 16px)",
     windowBorder: "rgba(248,113,113,0.4)",
+    studioGlow: "",
   },
   unique: {
     face: "linear-gradient(160deg, #6d28d9 0%, #7c3aed 15%, #a855f7 30%, #ec4899 50%, #f97316 70%, #eab308 85%, #22c55e 100%)",
@@ -99,6 +102,7 @@ const rarityTheme: Record<CardRarity, {
     windowBg: "linear-gradient(135deg, rgba(109,40,217,0.4), rgba(219,39,119,0.4))",
     windowPattern: "repeating-conic-gradient(rgba(255,255,255,0.04) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px",
     windowBorder: "rgba(196,130,255,0.4)",
+    studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(168,85,247,0.35) 0%, rgba(168,85,247,0.1) 35%, transparent 65%)",
   },
   epic: {
     face: "linear-gradient(160deg, #0f0f23 0%, #1a1a3e 20%, #22225a 40%, #1a1a3e 60%, #0f0f23 80%, #0a0a18 100%)",
@@ -112,6 +116,7 @@ const rarityTheme: Record<CardRarity, {
     windowBg: "linear-gradient(135deg, rgba(30,27,75,0.5), rgba(49,46,129,0.5))",
     windowPattern: "repeating-linear-gradient(30deg, transparent, transparent 10px, rgba(99,102,241,0.03) 10px, rgba(99,102,241,0.03) 20px)",
     windowBorder: "rgba(129,140,248,0.3)",
+    studioGlow: "",
   },
   legendary: {
     face: "linear-gradient(160deg, #92400e 0%, #b45309 15%, #d97706 30%, #fbbf24 50%, #f59e0b 65%, #d97706 80%, #92400e 100%)",
@@ -125,6 +130,7 @@ const rarityTheme: Record<CardRarity, {
     windowBg: "linear-gradient(135deg, rgba(146,64,14,0.4), rgba(120,53,15,0.5))",
     windowPattern: "repeating-conic-gradient(rgba(251,191,36,0.06) 0% 25%, transparent 0% 50%) 0 0 / 14px 14px",
     windowBorder: "rgba(252,211,77,0.5)",
+    studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(251,191,36,0.4) 0%, rgba(251,191,36,0.12) 35%, transparent 65%)",
   },
 };
 
@@ -354,8 +360,9 @@ export default function EPLPlayerCard({
               fontWeight: 900,
               fontSize: 26 * s.fontSize,
               lineHeight: 1,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.15)",
-              fontFamily: "'Inter', system-ui, sans-serif",
+              textShadow: "2px 2px 2px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.15)",
+              fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+              fontStretch: "condensed",
             }}>
               {rating}
             </span>
@@ -403,12 +410,24 @@ export default function EPLPlayerCard({
             </span>
           </div>
 
+          {/* STUDIO GLOW — Unique & Legendary only */}
+          {theme.studioGlow && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: theme.studioGlow,
+              pointerEvents: "none",
+              zIndex: 2,
+            }} />
+          )}
+
           {/* RECESSED IMAGE WINDOW */}
           <div style={{
             position: "absolute",
             top: "50%",
             left: "50%",
-            transform: "translate(-50%, -52%)",
+            transform: "translate(-50%, -52%) translateZ(40px)",
+            transformStyle: "preserve-3d",
             width: `${62}%`,
             aspectRatio: "4/5",
             zIndex: 3,
@@ -421,7 +440,7 @@ export default function EPLPlayerCard({
               inset 0 -2px 10px rgba(0,0,0,0.3),
               inset 3px 0 10px rgba(0,0,0,0.25),
               inset -3px 0 10px rgba(0,0,0,0.25),
-              0 4px 20px rgba(0,0,0,0.3)
+              0 8px 25px rgba(0,0,0,0.4)
             `,
           }}>
             {/* Inner bevel highlight */}
@@ -443,7 +462,7 @@ export default function EPLPlayerCard({
                   height: "100%",
                   objectFit: "cover",
                   objectPosition: "top center",
-                  filter: "contrast(1.08) saturate(1.12)",
+                  filter: "contrast(1.08) saturate(1.12) drop-shadow(0 10px 20px rgba(0,0,0,0.6))",
                 }}
               />
             ) : (
@@ -488,16 +507,17 @@ export default function EPLPlayerCard({
             background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.5) 75%, transparent 100%)",
             padding: `${35 * s.fontSize}px ${10 * s.fontSize}px ${8 * s.fontSize}px`,
           }}>
-            {/* Player name — etched look */}
             <h3 style={{
               color: "#fff",
               fontWeight: 900,
-              fontSize: 17 * s.fontSize,
+              fontSize: 18 * s.fontSize,
               textAlign: "center",
               textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              lineHeight: 1.1,
-              textShadow: "0 2px 0 rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.08)",
+              letterSpacing: "0.1em",
+              lineHeight: 1.05,
+              fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+              fontStretch: "condensed",
+              textShadow: "2px 2px 2px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.4), 0 -1px 0 rgba(255,255,255,0.06)",
               marginBottom: 1,
             }}>
               {player.lastname || player.name?.split(" ").slice(-1)[0] || "Unknown"}
@@ -509,7 +529,9 @@ export default function EPLPlayerCard({
                 textAlign: "center",
                 textTransform: "uppercase",
                 letterSpacing: "0.2em",
-                textShadow: "0 1px 0 rgba(0,0,0,0.5)",
+                fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+                fontStretch: "condensed",
+                textShadow: "1px 1px 1px rgba(0,0,0,0.5)",
                 marginBottom: 2,
               }}>
                 {player.firstname}
@@ -549,7 +571,7 @@ export default function EPLPlayerCard({
               </span>
             </div>
 
-            {/* STAT BARS */}
+            {/* STAT BARS — engraved/carved into card */}
             <div style={{
               display: "flex",
               justifyContent: "space-between",
@@ -558,12 +580,25 @@ export default function EPLPlayerCard({
               borderTop: "1px solid rgba(255,255,255,0.1)",
             }}>
               {stats.map(({ label, value }) => (
-                <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <div key={label} style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 2,
+                  background: "rgba(0,0,0,0.2)",
+                  borderRadius: 4,
+                  padding: `${3 * s.fontSize}px ${2 * s.fontSize}px`,
+                  boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(255,255,255,0.05)",
+                }}>
                   <span style={{
-                    color: "rgba(255,255,255,0.45)",
+                    color: "rgba(255,255,255,0.5)",
                     fontSize: 7 * s.fontSize,
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+                    fontStretch: "condensed",
+                    textShadow: "0 1px 0 rgba(0,0,0,0.6), 0 -1px 0 rgba(255,255,255,0.04)",
                   }}>
                     {label}
                   </span>
@@ -571,9 +606,9 @@ export default function EPLPlayerCard({
                     width: "100%",
                     height: 4 * s.fontSize,
                     borderRadius: 2,
-                    background: "rgba(255,255,255,0.08)",
+                    background: "rgba(0,0,0,0.25)",
                     overflow: "hidden",
-                    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
+                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.03)",
                   }}>
                     <div style={{
                       width: `${value}%`,
@@ -590,9 +625,13 @@ export default function EPLPlayerCard({
                   </div>
                   <span style={{
                     color: value >= 80 ? theme.accent : "#fff",
-                    fontWeight: 800,
+                    fontWeight: 900,
                     fontSize: 10 * s.fontSize,
-                    textShadow: value >= 80 ? `0 0 6px ${theme.accent}55` : "0 1px 2px rgba(0,0,0,0.5)",
+                    fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+                    fontStretch: "condensed",
+                    textShadow: value >= 80
+                      ? `0 0 6px ${theme.accent}55, 2px 2px 2px rgba(0,0,0,0.5)`
+                      : "2px 2px 2px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.05)",
                   }}>
                     {value}
                   </span>

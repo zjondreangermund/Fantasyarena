@@ -10,38 +10,43 @@ const rarityConfig = {
     labelBg: "bg-zinc-600",
     accent: "text-zinc-300",
     slabBg: "#b0b0b0",
+    studioGlow: "",
   },
   rare: {
-    gradient: "from-blue-700 via-blue-500 to-blue-700",
-    border: "border-blue-400/50",
+    gradient: "from-red-800 via-red-600 to-red-800",
+    border: "border-red-400/50",
     label: "Rare",
-    labelBg: "bg-blue-600",
-    accent: "text-blue-300",
-    slabBg: "#2563eb",
+    labelBg: "bg-red-700",
+    accent: "text-red-300",
+    slabBg: "#dc2626",
+    studioGlow: "",
   },
   unique: {
-    gradient: "from-purple-700 via-fuchsia-500 to-purple-700",
+    gradient: "from-purple-800 via-fuchsia-600 to-purple-800",
     border: "border-purple-400/50",
     label: "Unique",
     labelBg: "bg-purple-600",
     accent: "text-purple-300",
     slabBg: "#7c3aed",
+    studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(168,85,247,0.35) 0%, rgba(168,85,247,0.1) 40%, transparent 70%)",
   },
   epic: {
-    gradient: "from-slate-900 via-indigo-950 to-slate-900",
+    gradient: "from-slate-950 via-indigo-950 to-slate-950",
     border: "border-indigo-400/40",
     label: "Epic",
     labelBg: "bg-indigo-900",
     accent: "text-indigo-300",
     slabBg: "#1e1b4b",
+    studioGlow: "",
   },
   legendary: {
-    gradient: "from-amber-700 via-yellow-400 to-amber-700",
+    gradient: "from-amber-800 via-yellow-500 to-amber-800",
     border: "border-yellow-400/60",
     label: "Legendary",
     labelBg: "bg-gradient-to-r from-amber-600 to-yellow-500",
     accent: "text-yellow-300",
     slabBg: "#d97706",
+    studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(251,191,36,0.4) 0%, rgba(251,191,36,0.12) 40%, transparent 70%)",
   },
 };
 
@@ -106,26 +111,52 @@ export default function PlayerCard({
         className={`relative overflow-hidden rounded-xl ${rarity.border} border-2 h-full bg-gradient-to-b ${rarity.gradient}`}
         style={{
           boxShadow: "inset 0 0 15px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3)",
+          transformStyle: "preserve-3d",
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80 z-10" />
 
-        <img
-          src={imageUrl}
-          alt={card.player?.name || "Player"}
-          className="absolute inset-0 w-full h-full object-cover"
+        {rarity.studioGlow && (
+          <div
+            className="absolute inset-0 z-[11] pointer-events-none"
+            style={{ background: rarity.studioGlow }}
+          />
+        )}
+
+        <div
+          className="absolute inset-0 z-[5]"
           style={{
-            filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.5)) drop-shadow(0 4px 6px rgba(0,0,0,0.3))",
+            transform: "translateZ(40px)",
+            transformStyle: "preserve-3d",
           }}
-        />
+        >
+          <img
+            src={imageUrl}
+            alt={card.player?.name || "Player"}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.6)) drop-shadow(0 6px 8px rgba(0,0,0,0.4))",
+            }}
+          />
+        </div>
 
         <div className="absolute top-1.5 left-1.5 z-20 flex flex-col gap-1">
           <div className="flex items-center gap-1">
-            <span className="text-white font-bold text-lg leading-none drop-shadow-lg">
+            <span
+              className="text-white font-black text-lg leading-none"
+              style={{
+                fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+                fontStretch: "condensed",
+                textShadow: "2px 2px 2px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.1)",
+              }}
+            >
               {card.player?.overall || 0}
             </span>
           </div>
-          <span className="text-white/80 text-[10px] font-semibold uppercase tracking-wider drop-shadow">
+          <span
+            className="text-white/80 text-[10px] font-bold uppercase tracking-wider"
+            style={{ textShadow: "1px 1px 1px rgba(0,0,0,0.5)" }}
+          >
             {card.player?.position}
           </span>
         </div>
@@ -133,6 +164,7 @@ export default function PlayerCard({
         <div className="absolute top-1.5 right-1.5 z-20">
           <Badge
             className={`${rarity.labelBg} text-white text-[9px] px-1.5 py-0 border-0 no-default-hover-elevate no-default-active-elevate`}
+            style={{ textShadow: "1px 1px 1px rgba(0,0,0,0.4)" }}
           >
             {rarity.label}
           </Badge>
@@ -140,24 +172,35 @@ export default function PlayerCard({
 
         <div className="absolute bottom-0 left-0 right-0 z-20 p-2">
           <h3
-            className="text-white font-bold text-sm truncate"
+            className="text-white font-black text-sm truncate uppercase tracking-wide"
             style={{
-              textShadow: "0 2px 0 rgba(0,0,0,0.7), 0 -1px 0 rgba(255,255,255,0.1), 0 4px 8px rgba(0,0,0,0.4)",
+              fontFamily: "'Inter', 'Arial Black', system-ui, sans-serif",
+              fontStretch: "condensed",
+              textShadow: "2px 2px 2px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.06), 0 4px 8px rgba(0,0,0,0.3)",
             }}
           >
             {card.player?.name || "Unknown"}
           </h3>
           <p
             className="text-white/70 text-[10px] truncate"
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+            style={{ textShadow: "1px 1px 1px rgba(0,0,0,0.5)" }}
           >
             {card.player?.team} &middot; {card.player?.nationality}
           </p>
 
           <div className="flex items-center justify-between mt-1.5 gap-1">
-            <div className="flex items-center gap-1">
+            <div
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+              style={{
+                background: "rgba(0,0,0,0.2)",
+                boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(255,255,255,0.05)",
+              }}
+            >
               <Zap className="w-3 h-3 text-yellow-400" />
-              <span className="text-white/90 text-[10px] font-medium">
+              <span
+                className="text-white/90 text-[10px] font-bold"
+                style={{ textShadow: "1px 1px 1px rgba(0,0,0,0.5)" }}
+              >
                 Lv.{card.level}
               </span>
             </div>

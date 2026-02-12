@@ -78,7 +78,7 @@ function AuthenticatedApp() {
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
-          <main className="flex-1 overflow-hidden flex flex-col relative z-10">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col relative z-10">
             <AuthenticatedRouter />
           </main>
         </div>

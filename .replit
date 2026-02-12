@@ -35,6 +35,5 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-run = ["bash", "-c", "cd Fantasy-Sports-Exchange && npm start"]
-deploymentTarget = "autoscale"
-build = ["bash", "-c", "cd Fantasy-Sports-Exchange && npm run build"]
+run = ["sh", "-c", "npm start"]
+deploymentTarget = "cloudrun"

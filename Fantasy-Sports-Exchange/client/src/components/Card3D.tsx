@@ -168,6 +168,30 @@ export function eplPlayerToCard(player: EplPlayer): PlayerCardWithPlayer {
   } as PlayerCardWithPlayer;
 }
 
+function StatBadge({ label, value, color, size }: { label: string; value: string; color: string; size: "sm" | "md" | "lg" }) {
+  const fs = size === "sm" ? 6 : size === "lg" ? 8 : 7;
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
+    }}>
+      <span style={{
+        fontSize: fs - 1, fontWeight: 700, color: "rgba(255,255,255,0.4)",
+        letterSpacing: "0.08em", textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+        textTransform: "uppercase",
+      }}>
+        {label}
+      </span>
+      <span style={{
+        fontSize: fs + 1, fontWeight: 900, color,
+        textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+        fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
+      }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
 interface Card3DProps {
   card: PlayerCardWithPlayer;
   size?: "sm" | "md" | "lg";
@@ -295,12 +319,28 @@ export default function Card3D({
           <FallbackCard rarity={rarity} imageUrl={imageUrl} />
         )}
 
+        {/* shimmer shine overlay - moves with tilt */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: 14,
+            background: hovered
+              ? `linear-gradient(${135 + rotY * 4}deg, rgba(255,255,255,0) 10%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.18) 65%, rgba(255,255,255,0) 90%)`
+              : `linear-gradient(${135 + rotY * 4}deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 55%, rgba(255,255,255,0) 80%)`,
+            pointerEvents: "none",
+            zIndex: 5,
+            transition: hovered ? "none" : "background 0.4s ease-out",
+            mixBlendMode: "overlay",
+          }}
+        />
+
         {/* card-content: engraved on the metal surface - rotates with card-3d via CSS */}
         <div
           className="card-content"
           style={{
             position: "absolute",
-            top: "13%", left: "13%", right: "13%", bottom: "13%",
+            top: "10%", left: "13%", right: "13%", bottom: "10%",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -348,8 +388,35 @@ export default function Card3D({
             </div>
           </div>
 
-          {/* BOTTOM: Name, Club, Position, Level, DS */}
+          {/* BOTTOM: Stats row, then Name + Club */}
           <div style={{ textAlign: "center" }}>
+            {/* stat icons row */}
+            <div style={{
+              display: "flex", justifyContent: "center", gap: size === "sm" ? 6 : 10,
+              marginBottom: size === "sm" ? 2 : 3,
+            }}>
+              <StatBadge label="LV" value={String(card.level || 1)} color="#facc15" size={size} />
+              <StatBadge label="DS" value={String(card.decisiveScore || 35)} color={dsColor} size={size} />
+              <StatBadge label="XP" value={String(card.xp || 0)} color="#60a5fa" size={size} />
+            </div>
+            {/* last 5 scores */}
+            {card.last5Scores && card.last5Scores.some((s: number) => s > 0) && (
+              <div style={{
+                display: "flex", justifyContent: "center", gap: 2, marginBottom: size === "sm" ? 2 : 3,
+              }}>
+                {(card.last5Scores as number[]).map((score: number, i: number) => (
+                  <div key={i} style={{
+                    width: size === "sm" ? 10 : 13, height: size === "sm" ? 10 : 13,
+                    borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center",
+                    background: score >= 70 ? "rgba(74,222,128,0.3)" : score >= 40 ? "rgba(250,204,21,0.25)" : "rgba(148,163,184,0.2)",
+                    fontSize: size === "sm" ? 5 : 6, fontWeight: 800, color: "#fff",
+                  }}>
+                    {score}
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* player name */}
             <div style={{
               fontSize: size === "sm" ? 9 : size === "lg" ? 13 : 11,
               fontWeight: 900, color: "#fff", letterSpacing: "0.06em",
@@ -359,6 +426,7 @@ export default function Card3D({
             }}>
               {(card.player?.name || "Unknown").substring(0, 16)}
             </div>
+            {/* club */}
             <div style={{
               fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7,
               fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.1em",
@@ -366,20 +434,6 @@ export default function Card3D({
               textShadow: "0 1px 3px rgba(0,0,0,0.7)",
             }}>
               {(card.player?.team || "Unknown").substring(0, 20)}
-            </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: size === "sm" ? 5 : 8, marginTop: 2 }}>
-              <span style={{
-                fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7, fontWeight: 800, color: "#facc15",
-                letterSpacing: "0.04em", textShadow: "0 1px 2px rgba(0,0,0,0.6)",
-              }}>
-                LV.{card.level || 1}
-              </span>
-              <span style={{
-                fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7, fontWeight: 800, color: dsColor,
-                letterSpacing: "0.04em", textShadow: "0 1px 2px rgba(0,0,0,0.6)",
-              }}>
-                DS {card.decisiveScore || 35}
-              </span>
             </div>
           </div>
         </div>

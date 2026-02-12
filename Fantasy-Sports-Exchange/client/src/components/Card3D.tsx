@@ -12,51 +12,63 @@ const rarityStyles: Record<RarityKey, {
   labelBg: string;
   textColor: string;
   accentColor: string;
+  edgeDark: string;
+  edgeMid: string;
 }> = {
   common: {
     gradient: "linear-gradient(145deg, #5a6577 0%, #8e9aaf 30%, #a8b5c4 50%, #8e9aaf 70%, #5a6577 100%)",
     border: "#8e9aaf",
-    glow: "0 0 20px rgba(120,140,165,0.3)",
+    glow: "0 10px 40px rgba(120,140,165,0.3)",
     label: "COMMON",
     labelBg: "rgba(100,120,140,0.85)",
     textColor: "#cbd5e1",
     accentColor: "#b8c4d4",
+    edgeDark: "#5a6575",
+    edgeMid: "#6b7a8d",
   },
   rare: {
     gradient: "linear-gradient(145deg, #7f1d1d 0%, #b91c1c 30%, #dc2626 50%, #b91c1c 70%, #7f1d1d 100%)",
     border: "#dc2626",
-    glow: "0 0 25px rgba(220,38,38,0.35)",
+    glow: "0 10px 50px rgba(220,38,38,0.35), 0 0 80px rgba(239,68,68,0.12)",
     label: "RARE",
     labelBg: "rgba(185,28,28,0.9)",
     textColor: "#fca5a5",
     accentColor: "#fca5a5",
+    edgeDark: "#6f1010",
+    edgeMid: "#991b1b",
   },
   unique: {
     gradient: "linear-gradient(145deg, #4c1d95 0%, #6d28d9 30%, #a855f7 50%, #6d28d9 70%, #4c1d95 100%)",
     border: "#a855f7",
-    glow: "0 0 30px rgba(124,58,237,0.35)",
+    glow: "0 10px 50px rgba(124,58,237,0.35), 0 0 80px rgba(236,72,153,0.12)",
     label: "UNIQUE",
     labelBg: "linear-gradient(135deg, #6d28d9, #db2777)",
     textColor: "#e9d5ff",
     accentColor: "#e9d5ff",
+    edgeDark: "#4c1d95",
+    edgeMid: "#6d28d9",
   },
   epic: {
     gradient: "linear-gradient(145deg, #0f0f2e 0%, #1a1a3e 30%, #312e81 50%, #1a1a3e 70%, #0f0f2e 100%)",
     border: "#6366f1",
-    glow: "0 0 30px rgba(79,70,229,0.3)",
+    glow: "0 10px 50px rgba(79,70,229,0.25), 0 0 80px rgba(99,102,241,0.1)",
     label: "EPIC",
     labelBg: "linear-gradient(135deg, #1e1b4b, #312e81)",
     textColor: "#a5b4fc",
     accentColor: "#a5b4fc",
+    edgeDark: "#050510",
+    edgeMid: "#0f0f23",
   },
   legendary: {
     gradient: "linear-gradient(145deg, #78350f 0%, #b45309 30%, #d97706 50%, #f59e0b 60%, #b45309 80%, #78350f 100%)",
     border: "#f59e0b",
-    glow: "0 0 35px rgba(245,158,11,0.4)",
+    glow: "0 10px 60px rgba(245,158,11,0.4), 0 0 100px rgba(251,191,36,0.15)",
     label: "LEGENDARY",
     labelBg: "linear-gradient(135deg, #92400e, #d97706)",
     textColor: "#fef3c7",
     accentColor: "#fef3c7",
+    edgeDark: "#5c2d06",
+    edgeMid: "#78350f",
   },
 };
 
@@ -140,12 +152,15 @@ export default function Card3D({
   const rarity = (card.rarity as RarityKey) || "common";
   const styles = rarityStyles[rarity];
 
+  const edge = 12;
   const sizeMap = {
     sm: { w: 170, h: 250, fontSize: 0.75 },
     md: { w: 220, h: 320, fontSize: 1 },
     lg: { w: 270, h: 390, fontSize: 1.2 },
   };
   const s = sizeMap[size];
+  const totalW = s.w + edge;
+  const totalH = s.h + edge;
 
   const imageIndex = ((card.playerId - 1) % 6) + 1;
   const fallbackImage = card.player?.imageUrl || `/images/player-${imageIndex}.png`;
@@ -213,8 +228,8 @@ export default function Card3D({
     <div
       ref={containerRef}
       style={{
-        width: s.w,
-        height: s.h,
+        width: totalW,
+        height: totalH,
         perspective: 800,
         cursor: selectable ? "pointer" : "default",
       }}
@@ -226,25 +241,57 @@ export default function Card3D({
     >
       <div
         style={{
-          width: "100%",
-          height: "100%",
+          width: totalW,
+          height: totalH,
           position: "relative",
-          borderRadius: 14,
           transformStyle: "preserve-3d",
           transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
           transition: hovered ? "transform 0.05s ease-out" : "transform 0.4s ease-out",
-          boxShadow: selected
-            ? `0 0 0 3px hsl(250,85%,65%), ${styles.glow}`
-            : styles.glow,
         }}
       >
+        {/* RIGHT EDGE */}
+        <div style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          width: edge,
+          height: s.h,
+          background: `linear-gradient(180deg, ${styles.edgeMid} 0%, ${styles.edgeDark} 40%, ${styles.edgeDark} 100%)`,
+          borderRadius: `0 14px 14px 0`,
+          transform: `translateZ(-${edge}px)`,
+          boxShadow: `inset -2px 0 6px rgba(0,0,0,0.4), inset 1px 0 2px rgba(255,255,255,0.05)`,
+          zIndex: 0,
+        }} />
+
+        {/* BOTTOM EDGE */}
+        <div style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: edge,
+          background: `linear-gradient(90deg, ${styles.edgeDark} 0%, ${styles.edgeMid} 30%, ${styles.edgeDark} 100%)`,
+          borderRadius: `0 0 14px 14px`,
+          transform: `translateZ(-${edge}px)`,
+          boxShadow: `inset 0 -2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.05)`,
+          zIndex: 0,
+        }} />
+
+        {/* MAIN CARD FACE */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            left: 0,
+            width: s.w,
+            height: s.h,
             borderRadius: 14,
             background: styles.gradient,
+            boxShadow: selected
+              ? `0 0 0 3px hsl(250,85%,65%), ${styles.glow}, inset 0px 1px 1px rgba(255,255,255,0.4), inset 0px -1px 1px rgba(0,0,0,0.4)`
+              : `${styles.glow}, inset 0px 1px 1px rgba(255,255,255,0.4), inset 0px -1px 1px rgba(0,0,0,0.4)`,
             overflow: "hidden",
+            zIndex: 2,
           }}
         >
           <div

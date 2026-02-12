@@ -15,12 +15,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { type PlayerCardWithPlayer, type Competition, type CompetitionEntry } from "@shared/schema";
-import { Trophy, Users, Clock, DollarSign, Crown, Medal } from "lucide-react";
+import { Trophy, Users, Clock, DollarSign, Crown, Medal, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/auth-utils";
 import RewardPopup from "@/components/RewardPopup";
 
-type CompetitionWithEntries = Competition & { entries: CompetitionEntry[]; entryCount: number };
+type EnrichedEntry = CompetitionEntry & { userName: string; userImage: string | null };
+type CompetitionWithEntries = Competition & { entries: EnrichedEntry[]; entryCount: number };
 
 export default function CompetitionsPage() {
   const { toast } = useToast();
@@ -247,6 +248,69 @@ export default function CompetitionsPage() {
   );
 }
 
+function Leaderboard({ entries }: { entries: EnrichedEntry[] }) {
+  const [expanded, setExpanded] = useState(false);
+  if (entries.length === 0) return null;
+
+  const displayEntries = expanded ? entries : entries.slice(0, 5);
+  const rankColors = ["text-yellow-500", "text-zinc-400", "text-amber-700"];
+
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-xs font-semibold text-muted-foreground mb-2 hover:text-foreground transition-colors w-full"
+      >
+        <Trophy className="w-3 h-3" />
+        Leaderboard ({entries.length})
+        {entries.length > 5 && (
+          expanded ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />
+        )}
+      </button>
+      <div className="space-y-1">
+        {displayEntries.map((entry, idx) => (
+          <div
+            key={entry.id}
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs ${
+              idx === 0 ? "bg-yellow-500/10" : idx < 3 ? "bg-muted/50" : ""
+            }`}
+          >
+            <span className={`font-bold w-5 text-center ${rankColors[idx] || "text-muted-foreground"}`}>
+              {idx + 1}
+            </span>
+            {entry.userImage ? (
+              <img
+                src={entry.userImage}
+                alt=""
+                className="w-5 h-5 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                {entry.userName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="flex-1 truncate font-medium text-foreground">
+              {entry.userName}
+            </span>
+            <span className="font-mono font-bold text-foreground">
+              {(entry.totalScore || 0).toFixed(1)}
+            </span>
+            {idx === 0 && <Crown className="w-3 h-3 text-yellow-500" />}
+          </div>
+        ))}
+      </div>
+      {!expanded && entries.length > 5 && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="text-xs text-primary hover:underline mt-1 w-full text-center"
+        >
+          Show all {entries.length} entries
+        </button>
+      )}
+    </div>
+  );
+}
+
 function CompetitionCard({ comp, onJoin }: { comp: CompetitionWithEntries; onJoin: () => void }) {
   const endDate = new Date(comp.endDate);
   const now = new Date();
@@ -298,8 +362,10 @@ function CompetitionCard({ comp, onJoin }: { comp: CompetitionWithEntries; onJoi
         </div>
       )}
 
+      <Leaderboard entries={comp.entries} />
+
       <Button
-        className="w-full"
+        className="w-full mt-4"
         onClick={onJoin}
         disabled={comp.status !== "open"}
       >

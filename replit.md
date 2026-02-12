@@ -34,7 +34,7 @@ Preferred communication style: Simple, everyday language.
 | `/marketplace` | Buy/sell/swap rare+ cards with fee transparency |
 | `/wallet` | Deposit funds, view transaction history |
 
-**Onboarding Flow**: First-time users receive 3 packs of 3 common players each, choose their best 5 for their starting lineup, and get a $100 welcome bonus. Confetti celebration on completion.
+**Onboarding Flow**: First-time users receive 5 position-based packs (3 GK, 3 DEF, 3 MID, 3 FWD, 3 Random Wildcards = 15 cards total). Users pick 1 card from each pack to form their starting 5. Selecting a card triggers a cinematic dismiss animation where non-selected cards fade and the pack collapses to show only the chosen card. Wallet starts at N$0. Confetti celebration on completion.
 
 ### Backend
 - **Runtime**: Node.js with Express.js, written in TypeScript (tsx for dev, esbuild for production)

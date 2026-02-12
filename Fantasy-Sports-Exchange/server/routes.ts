@@ -253,14 +253,35 @@ export async function registerRoutes(
       }
 
       if (!onboarding || !onboarding.packCards || (onboarding.packCards as number[][]).length === 0) {
-        const randomPlayers = await storage.getRandomPlayers(9);
-        const cardIds: number[][] = [[], [], []];
+        const packPositions = ["GK", "DEF", "MID", "FWD"];
+        const cardIds: number[][] = [[], [], [], [], []];
 
-        for (let i = 0; i < randomPlayers.length; i++) {
-          const packIdx = Math.floor(i / 3);
-          const { serialId, serialNumber, maxSupply } = await storage.generateSerialId(randomPlayers[i].id, randomPlayers[i].name, "common");
+        for (let p = 0; p < 4; p++) {
+          const posPlayers = await storage.getRandomPlayersByPosition(packPositions[p], 3);
+          for (const player of posPlayers) {
+            const { serialId, serialNumber, maxSupply } = await storage.generateSerialId(player.id, player.name, "common");
+            const card = await storage.createPlayerCard({
+              playerId: player.id,
+              ownerId: userId,
+              rarity: "common",
+              serialId,
+              serialNumber,
+              maxSupply,
+              level: 1,
+              xp: 0,
+              last5Scores: randomScores(),
+              forSale: false,
+              price: 0,
+            });
+            cardIds[p].push(card.id);
+          }
+        }
+
+        const randomPlayers = await storage.getRandomPlayers(3);
+        for (const player of randomPlayers) {
+          const { serialId, serialNumber, maxSupply } = await storage.generateSerialId(player.id, player.name, "common");
           const card = await storage.createPlayerCard({
-            playerId: randomPlayers[i].id,
+            playerId: player.id,
             ownerId: userId,
             rarity: "common",
             serialId,
@@ -272,7 +293,7 @@ export async function registerRoutes(
             forSale: false,
             price: 0,
           });
-          cardIds[packIdx].push(card.id);
+          cardIds[4].push(card.id);
         }
 
         if (onboarding) {
@@ -290,16 +311,19 @@ export async function registerRoutes(
       }
 
       const packCardIds = onboarding!.packCards as number[][];
-      const packs: any[][] = [[], [], []];
+      const packLabels = ["Goalkeepers", "Defenders", "Midfielders", "Forwards", "Wildcards"];
+      const packs: any[][] = [];
 
       for (let p = 0; p < packCardIds.length; p++) {
+        const packCards: any[] = [];
         for (const cardId of packCardIds[p]) {
           const card = await storage.getPlayerCardWithPlayer(cardId);
-          if (card) packs[p].push(card);
+          if (card) packCards.push(card);
         }
+        packs.push(packCards);
       }
 
-      res.json({ packs, completed: false });
+      res.json({ packs, packLabels, completed: false });
     } catch (error) {
       console.error("Error getting onboarding:", error);
       res.status(500).json({ message: "Failed to get onboarding" });
@@ -341,13 +365,7 @@ export async function registerRoutes(
 
       let wallet = await storage.getWallet(userId);
       if (!wallet) {
-        await storage.createWallet({ userId, balance: 100 });
-        await storage.createTransaction({
-          userId,
-          type: "deposit",
-          amount: 100,
-          description: "Welcome bonus - $100 starter funds",
-        });
+        await storage.createWallet({ userId, balance: 0 });
       }
 
       res.json({ success: true });
@@ -462,7 +480,17 @@ export async function registerRoutes(
       const result = [];
       for (const comp of comps) {
         const entries = await storage.getCompetitionEntries(comp.id);
-        result.push({ ...comp, entryCount: entries.length, entries });
+        const enrichedEntries = [];
+        for (const entry of entries) {
+          const user = await storage.getUser(entry.userId);
+          enrichedEntries.push({
+            ...entry,
+            userName: user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Anonymous" : "Anonymous",
+            userImage: user?.profileImageUrl || null,
+          });
+        }
+        enrichedEntries.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+        result.push({ ...comp, entryCount: entries.length, entries: enrichedEntries });
       }
       res.json(result);
     } catch (error) {

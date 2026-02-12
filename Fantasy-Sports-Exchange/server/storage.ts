@@ -10,14 +10,17 @@ import {
   type CompetitionEntry, type InsertCompetitionEntry,
   type SwapOffer, type InsertSwapOffer,
   type WithdrawalRequest, type InsertWithdrawalRequest,
+  type User,
   players, playerCards, wallets, transactions, lineups, userOnboarding,
   competitions, competitionEntries, swapOffers, withdrawalRequests,
+  users,
   RARITY_SUPPLY,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
+  getUser(userId: string): Promise<User | undefined>;
   getPlayers(): Promise<Player[]>;
   getPlayer(id: number): Promise<Player | undefined>;
   createPlayer(player: InsertPlayer): Promise<Player>;
@@ -48,6 +51,7 @@ export interface IStorage {
 
   getPlayerCount(): Promise<number>;
   getRandomPlayers(count: number): Promise<Player[]>;
+  getRandomPlayersByPosition(position: string, count: number): Promise<Player[]>;
 
   getCompetitions(): Promise<Competition[]>;
   getCompetition(id: number): Promise<Competition | undefined>;
@@ -78,6 +82,11 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getUser(userId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user || undefined;
+  }
+
   async getPlayers(): Promise<Player[]> {
     return db.select().from(players);
   }
@@ -268,6 +277,15 @@ export class DatabaseStorage implements IStorage {
     return db
       .select()
       .from(players)
+      .orderBy(sql`RANDOM()`)
+      .limit(count);
+  }
+
+  async getRandomPlayersByPosition(position: string, count: number): Promise<Player[]> {
+    return db
+      .select()
+      .from(players)
+      .where(eq(players.position, position as any))
       .orderBy(sql`RANDOM()`)
       .limit(count);
   }

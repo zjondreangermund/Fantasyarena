@@ -71,7 +71,8 @@ function AuthenticatedApp() {
               backgroundSize: "min(55vw, 600px)",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center center",
-              opacity: 0.03,
+              opacity: 0.07,
+              filter: "drop-shadow(0 0 40px rgba(200,200,220,0.15))",
             }}
           />
           <header className="flex items-center justify-between gap-2 p-2 border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-xl">

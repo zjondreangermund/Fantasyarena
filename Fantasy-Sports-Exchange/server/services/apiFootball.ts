@@ -302,9 +302,7 @@ export async function initialSync() {
   console.log("EPL data sync complete");
 }
 
-export async function getEplPlayers(page: number = 1, limit: number = 50, search?: string, position?: string) {
-  let query = db.select().from(eplPlayers).orderBy(desc(eplPlayers.goals));
-
+export async function getEplPlayers(page: number = 1, limit: number = 100, search?: string, position?: string) {
   const results = await db.select().from(eplPlayers)
     .where(
       search ? sql`LOWER(${eplPlayers.name}) LIKE ${'%' + search.toLowerCase() + '%'}` :

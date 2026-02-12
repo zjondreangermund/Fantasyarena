@@ -52,7 +52,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPlayer(player: InsertPlayer): Promise<Player> {
-    const [created] = await db.insert(players).values(player).returning();
+    const [created] = await db.insert(players).values(player as any).returning();
     return created;
   }
 
@@ -81,7 +81,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPlayerCard(card: InsertPlayerCard): Promise<PlayerCard> {
-    const [created] = await db.insert(playerCards).values(card).returning();
+    const [created] = await db.insert(playerCards).values(card as any).returning();
     return created;
   }
 
@@ -109,7 +109,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWallet(wallet: InsertWallet): Promise<Wallet> {
-    const [created] = await db.insert(wallets).values(wallet).returning();
+    const [created] = await db.insert(wallets).values(wallet as any).returning();
     return created;
   }
 
@@ -132,7 +132,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransaction(tx: InsertTransaction): Promise<Transaction> {
-    const [created] = await db.insert(transactions).values(tx).returning();
+    const [created] = await db.insert(transactions).values(tx as any).returning();
     return created;
   }
 
@@ -146,14 +146,14 @@ export class DatabaseStorage implements IStorage {
     if (existing) {
       const [updated] = await db
         .update(lineups)
-        .set({ cardIds, captainId })
+        .set({ cardIds, captainId } as any)
         .where(eq(lineups.userId, userId))
         .returning();
       return updated;
     }
     const [created] = await db
       .insert(lineups)
-      .values({ userId, cardIds, captainId })
+      .values({ userId, cardIds, captainId } as any)
       .returning();
     return created;
   }
@@ -167,7 +167,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOnboarding(data: InsertOnboarding): Promise<UserOnboarding> {
-    const [created] = await db.insert(userOnboarding).values(data).returning();
+    const [created] = await db.insert(userOnboarding).values(data as any).returning();
     return created;
   }
 

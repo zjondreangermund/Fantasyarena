@@ -90,12 +90,12 @@ export const userOnboardingRelations = relations(userOnboarding, ({ one }) => ({
   user: one(users, { fields: [userOnboarding.userId], references: [users.id] }),
 }));
 
-export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
-export const insertPlayerCardSchema = createInsertSchema(playerCards).omit({ id: true, acquiredAt: true });
-export const insertWalletSchema = createInsertSchema(wallets).omit({ id: true });
-export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
-export const insertLineupSchema = createInsertSchema(lineups).omit({ id: true });
-export const insertOnboardingSchema = createInsertSchema(userOnboarding).omit({ id: true });
+export const insertPlayerSchema = createInsertSchema(players);
+export const insertPlayerCardSchema = createInsertSchema(playerCards);
+export const insertWalletSchema = createInsertSchema(wallets);
+export const insertTransactionSchema = createInsertSchema(transactions);
+export const insertLineupSchema = createInsertSchema(lineups);
+export const insertOnboardingSchema = createInsertSchema(userOnboarding);
 
 export type Player = typeof players.$inferSelect;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;

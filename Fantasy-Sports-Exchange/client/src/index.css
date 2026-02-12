@@ -325,4 +325,34 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+  
+}
+@layer components {
+  .card-slab {
+    @apply relative transition-all duration-300;
+    background: #d1d1d1; /* Base silver for Common */
+    border-radius: 12px;
+
+    /* THE 3D DEPTH EFFECT */
+    /* This creates the 'side' of the card by stacking dark shadows */
+    box-shadow: 
+      1px 1px 0px #b0b0b0,
+      2px 2px 0px #a0a0a0,
+      3px 3px 0px #959595,
+      4px 4px 0px #888888,
+      5px 5px 0px #808080,
+      10px 10px 20px rgba(0,0,0,0.4) !important;
+
+    transform-style: preserve-3d;
+  }
+
+  .card-slab:hover {
+    /* Slight lift when hovering */
+    transform: translate(-2px, -2px) rotateX(5deg) rotateY(5deg);
+    box-shadow: 
+      1px 1px 0px #b0b0b0,
+      3px 3px 0px #a0a0a0,
+      6px 6px 0px #808080,
+      15px 15px 30px rgba(0,0,0,0.5) !important;
+  }
 }

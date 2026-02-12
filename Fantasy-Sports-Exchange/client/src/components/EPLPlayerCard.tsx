@@ -48,11 +48,11 @@ function getPositionShort(pos: string | null): string {
   return map[pos] || pos.substring(0, 3).toUpperCase();
 }
 
-const LION_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' opacity='0.06'%3E%3Cpath d='M50 5 C30 5 15 20 15 40 C15 55 25 65 30 70 L25 85 L30 90 L35 82 L40 95 L45 88 L50 100 L55 88 L60 95 L65 82 L70 90 L75 85 L70 70 C75 65 85 55 85 40 C85 20 70 5 50 5Z M35 35 C38 35 40 37 40 40 C40 43 38 45 35 45 C32 45 30 43 30 40 C30 37 32 35 35 35Z M65 35 C68 35 70 37 70 40 C70 43 68 45 65 45 C62 45 60 43 60 40 C60 37 62 35 65 35Z M40 55 C40 55 45 62 50 62 C55 62 60 55 60 55' fill='white' stroke='none'/%3E%3C/svg%3E")`;
+const LION_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' opacity='0.15'%3E%3Cpath d='M50 5 C30 5 15 20 15 40 C15 55 25 65 30 70 L25 85 L30 90 L35 82 L40 95 L45 88 L50 100 L55 88 L60 95 L65 82 L70 90 L75 85 L70 70 C75 65 85 55 85 40 C85 20 70 5 50 5Z M35 35 C38 35 40 37 40 40 C40 43 38 45 35 45 C32 45 30 43 30 40 C30 37 32 35 35 35Z M65 35 C68 35 70 37 70 40 C70 43 68 45 65 45 C62 45 60 43 60 40 C60 37 62 35 65 35Z M40 55 C40 55 45 62 50 62 C55 62 60 55 60 55' fill='white' stroke='none'/%3E%3C/svg%3E")`;
 
 const NOISE_SVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`;
 
-const GEO_PATTERN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='0.5'%3E%3Cpath d='M30 0L60 30L30 60L0 30Z'/%3E%3Cpath d='M30 10L50 30L30 50L10 30Z'/%3E%3Cpath d='M0 0L30 0L15 15Z'/%3E%3Cpath d='M60 0L60 30L45 15Z'/%3E%3Cpath d='M60 60L30 60L45 45Z'/%3E%3Cpath d='M0 60L0 30L15 45Z'/%3E%3C/g%3E%3C/svg%3E")`;
+const CRYSTAL_PATTERN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke-width='0.8'%3E%3Cpath d='M40 0L80 40L40 80L0 40Z' stroke='rgba(255,255,255,0.12)'/%3E%3Cpath d='M40 8L72 40L40 72L8 40Z' stroke='rgba(255,255,255,0.08)'/%3E%3Cpath d='M40 16L64 40L40 64L16 40Z' stroke='rgba(255,255,255,0.06)'/%3E%3Cpath d='M0 0L40 0L20 20Z' stroke='rgba(255,255,255,0.1)' fill='rgba(255,255,255,0.02)'/%3E%3Cpath d='M80 0L80 40L60 20Z' stroke='rgba(255,255,255,0.1)' fill='rgba(255,255,255,0.02)'/%3E%3Cpath d='M80 80L40 80L60 60Z' stroke='rgba(255,255,255,0.1)' fill='rgba(255,255,255,0.02)'/%3E%3Cpath d='M0 80L0 40L20 60Z' stroke='rgba(255,255,255,0.1)' fill='rgba(255,255,255,0.02)'/%3E%3Cpath d='M20 0L40 20L0 20Z' stroke='rgba(255,255,255,0.05)'/%3E%3Cpath d='M60 0L80 20L40 20Z' stroke='rgba(255,255,255,0.05)'/%3E%3Cpath d='M0 0L40 40' stroke='rgba(255,255,255,0.04)'/%3E%3Cpath d='M80 0L40 40' stroke='rgba(255,255,255,0.04)'/%3E%3C/g%3E%3C/svg%3E")`;
 
 const rarityTheme: Record<CardRarity, {
   face: string;
@@ -67,6 +67,8 @@ const rarityTheme: Record<CardRarity, {
   windowPattern: string;
   windowBorder: string;
   studioGlow: string;
+  rimColor: string;
+  crystalTint: string;
 }> = {
   common: {
     face: "linear-gradient(160deg, #8e9aaf 0%, #b8c4d4 25%, #a0aec0 50%, #8e9aaf 75%, #7a8899 100%)",
@@ -81,6 +83,8 @@ const rarityTheme: Record<CardRarity, {
     windowPattern: "repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 12px)",
     windowBorder: "rgba(180,195,215,0.4)",
     studioGlow: "",
+    rimColor: "rgba(200,215,235,0.4)",
+    crystalTint: "rgba(180,195,215,0.08)",
   },
   rare: {
     face: "linear-gradient(160deg, #b91c1c 0%, #dc2626 20%, #ef4444 45%, #dc2626 65%, #b91c1c 90%, #991b1b 100%)",
@@ -95,6 +99,8 @@ const rarityTheme: Record<CardRarity, {
     windowPattern: "repeating-linear-gradient(60deg, transparent, transparent 8px, rgba(255,255,255,0.04) 8px, rgba(255,255,255,0.04) 16px)",
     windowBorder: "rgba(248,113,113,0.4)",
     studioGlow: "",
+    rimColor: "rgba(248,113,113,0.45)",
+    crystalTint: "rgba(248,113,113,0.06)",
   },
   unique: {
     face: "linear-gradient(160deg, #6d28d9 0%, #7c3aed 15%, #a855f7 30%, #ec4899 50%, #f97316 70%, #eab308 85%, #22c55e 100%)",
@@ -109,6 +115,8 @@ const rarityTheme: Record<CardRarity, {
     windowPattern: "repeating-conic-gradient(rgba(255,255,255,0.04) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px",
     windowBorder: "rgba(196,130,255,0.4)",
     studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(168,85,247,0.35) 0%, rgba(168,85,247,0.1) 35%, transparent 65%)",
+    rimColor: "rgba(196,130,255,0.5)",
+    crystalTint: "rgba(168,85,247,0.06)",
   },
   epic: {
     face: "linear-gradient(160deg, #0f0f23 0%, #1a1a3e 20%, #22225a 40%, #1a1a3e 60%, #0f0f23 80%, #0a0a18 100%)",
@@ -123,6 +131,8 @@ const rarityTheme: Record<CardRarity, {
     windowPattern: "repeating-linear-gradient(30deg, transparent, transparent 10px, rgba(99,102,241,0.03) 10px, rgba(99,102,241,0.03) 20px)",
     windowBorder: "rgba(129,140,248,0.3)",
     studioGlow: "",
+    rimColor: "rgba(129,140,248,0.4)",
+    crystalTint: "rgba(99,102,241,0.05)",
   },
   legendary: {
     face: "linear-gradient(160deg, #92400e 0%, #b45309 15%, #d97706 30%, #fbbf24 50%, #f59e0b 65%, #d97706 80%, #92400e 100%)",
@@ -137,6 +147,8 @@ const rarityTheme: Record<CardRarity, {
     windowPattern: "repeating-conic-gradient(rgba(251,191,36,0.06) 0% 25%, transparent 0% 50%) 0 0 / 14px 14px",
     windowBorder: "rgba(252,211,77,0.5)",
     studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(251,191,36,0.4) 0%, rgba(251,191,36,0.12) 35%, transparent 65%)",
+    rimColor: "rgba(252,211,77,0.55)",
+    crystalTint: "rgba(251,191,36,0.06)",
   },
 };
 
@@ -237,7 +249,7 @@ export default function EPLPlayerCard({
           transform: "rotateY(-5deg)",
         }}
       >
-        {/* RIGHT EDGE — thick side slab */}
+        {/* RIGHT EDGE */}
         <div style={{
           position: "absolute",
           top: 4,
@@ -251,7 +263,7 @@ export default function EPLPlayerCard({
           zIndex: 0,
         }} />
 
-        {/* BOTTOM EDGE — thick bottom slab */}
+        {/* BOTTOM EDGE */}
         <div style={{
           position: "absolute",
           bottom: 0,
@@ -279,9 +291,11 @@ export default function EPLPlayerCard({
           borderBottom: `${s.edge}px solid ${theme.edgeDark}`,
           boxShadow: `
             ${theme.glow},
-            inset 0 0 15px rgba(255,255,255,0.2),
-            inset 0 1px 0 rgba(255,255,255,0.3),
-            inset 0 -1px 0 rgba(0,0,0,0.2)
+            inset 0 0 0 1px ${theme.rimColor},
+            inset 0 1px 0 rgba(255,255,255,0.35),
+            inset 0 -1px 0 rgba(0,0,0,0.3),
+            inset 1px 0 0 ${theme.rimColor},
+            inset -1px 0 0 ${theme.rimColor}
           `,
           overflow: "hidden",
           zIndex: 2,
@@ -297,12 +311,27 @@ export default function EPLPlayerCard({
             mixBlendMode: "overlay",
           }} />
 
-          {/* GEOMETRIC DIAMOND PATTERN */}
+          {/* HIGH-CONTRAST CRYSTAL PATTERN — top half only */}
           <div style={{
             position: "absolute",
-            inset: 0,
-            backgroundImage: GEO_PATTERN,
-            backgroundSize: "60px 60px",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "55%",
+            backgroundImage: CRYSTAL_PATTERN,
+            backgroundSize: "80px 80px",
+            pointerEvents: "none",
+            zIndex: 1,
+          }} />
+
+          {/* Crystal faceted highlight flare — top half */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "55%",
+            background: `linear-gradient(160deg, ${theme.crystalTint} 0%, transparent 30%, ${theme.crystalTint} 50%, transparent 70%, ${theme.crystalTint} 100%)`,
             pointerEvents: "none",
             zIndex: 1,
           }} />
@@ -314,22 +343,6 @@ export default function EPLPlayerCard({
             background: "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 25%, transparent 50%, rgba(255,255,255,0.02) 75%, transparent 100%)",
             pointerEvents: "none",
             zIndex: 2,
-          }} />
-
-          {/* PREMIER LEAGUE LION WATERMARK */}
-          <div style={{
-            position: "absolute",
-            top: "8%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "70%",
-            height: "55%",
-            backgroundImage: LION_SVG,
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            pointerEvents: "none",
-            zIndex: 1,
           }} />
 
           {/* Hover shine layer */}
@@ -346,43 +359,52 @@ export default function EPLPlayerCard({
             }}
           />
 
-          {/* HEADER BAR */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: `${4 * s.fontSize}px ${8 * s.fontSize}px`,
-            background: "rgba(0,0,0,0.25)",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-            position: "relative",
-            zIndex: 5,
-          }}>
-            <span style={{
-              color: "rgba(255,255,255,0.8)",
-              fontWeight: 700,
-              fontSize: 9 * s.fontSize,
-              letterSpacing: "0.08em",
-            }}>
-              2024-25
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              {player.teamLogo && (
-                <img src={player.teamLogo} alt="" style={{ width: 14 * s.fontSize, height: 14 * s.fontSize, objectFit: "contain" }} />
-              )}
-              <span style={{
-                color: "rgba(255,255,255,0.7)",
-                fontWeight: 600,
-                fontSize: 9 * s.fontSize,
-              }}>
-                #{player.number || "—"}
-              </span>
-            </div>
-          </div>
-
-          {/* RATING + POSITION — top left */}
+          {/* PREMIER LEAGUE LION — top left corner */}
           <div style={{
             position: "absolute",
-            top: 28 * s.fontSize,
+            top: 6 * s.fontSize,
+            left: 6 * s.fontSize,
+            width: 22 * s.fontSize,
+            height: 26 * s.fontSize,
+            backgroundImage: LION_SVG,
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            pointerEvents: "none",
+            zIndex: 6,
+          }} />
+
+          {/* CLUB CREST — top right corner */}
+          {player.teamLogo && (
+            <div style={{
+              position: "absolute",
+              top: 6 * s.fontSize,
+              right: 6 * s.fontSize,
+              width: 22 * s.fontSize,
+              height: 22 * s.fontSize,
+              zIndex: 6,
+              opacity: 0.85,
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
+            }}>
+              <img src={player.teamLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            </div>
+          )}
+
+          {/* STUDIO GLOW */}
+          {theme.studioGlow && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: theme.studioGlow,
+              pointerEvents: "none",
+              zIndex: 2,
+            }} />
+          )}
+
+          {/* RATING + POSITION — left side */}
+          <div style={{
+            position: "absolute",
+            top: 32 * s.fontSize,
             left: 8 * s.fontSize,
             zIndex: 5,
             display: "flex",
@@ -424,10 +446,10 @@ export default function EPLPlayerCard({
             </span>
           </div>
 
-          {/* RARITY LABEL — top right */}
+          {/* RARITY LABEL — right side */}
           <div style={{
             position: "absolute",
-            top: 28 * s.fontSize,
+            top: 32 * s.fontSize,
             right: 8 * s.fontSize,
             zIndex: 5,
           }}>
@@ -445,18 +467,7 @@ export default function EPLPlayerCard({
             </span>
           </div>
 
-          {/* STUDIO GLOW — Unique & Legendary only */}
-          {theme.studioGlow && (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: theme.studioGlow,
-              pointerEvents: "none",
-              zIndex: 2,
-            }} />
-          )}
-
-          {/* RECESSED IMAGE WINDOW */}
+          {/* RECESSED IMAGE WINDOW — deeper cutout */}
           <div style={{
             position: "absolute",
             top: "50%",
@@ -471,20 +482,19 @@ export default function EPLPlayerCard({
             background: theme.windowBg,
             border: `2px solid ${theme.windowBorder}`,
             boxShadow: `
-              inset 0 0 15px rgba(0,0,0,0.6),
-              inset 0 4px 15px rgba(0,0,0,0.5),
-              inset 0 -2px 10px rgba(0,0,0,0.3),
-              inset 3px 0 10px rgba(0,0,0,0.25),
-              inset -3px 0 10px rgba(0,0,0,0.25),
+              inset 0 0 20px rgba(0,0,0,0.7),
+              inset 0 6px 20px rgba(0,0,0,0.6),
+              inset 0 -4px 15px rgba(0,0,0,0.4),
+              inset 5px 0 15px rgba(0,0,0,0.35),
+              inset -5px 0 15px rgba(0,0,0,0.35),
               0 8px 25px rgba(0,0,0,0.4)
             `,
           }}>
-            {/* Inner bevel highlight */}
             <div style={{
               position: "absolute",
               inset: 0,
               borderRadius: 10 * s.fontSize,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.3)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.4)",
               pointerEvents: "none",
               zIndex: 3,
             }} />
@@ -520,7 +530,6 @@ export default function EPLPlayerCard({
               </div>
             )}
 
-            {/* Bottom fade inside window */}
             <div style={{
               position: "absolute",
               bottom: 0,
@@ -533,26 +542,28 @@ export default function EPLPlayerCard({
             }} />
           </div>
 
-          {/* DARK BOTTOM HALF */}
+          {/* DARK BOTTOM — hard separation for name plate */}
           <div style={{
             position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
-            height: "55%",
-            background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.5) 65%, transparent 100%)",
+            height: "50%",
+            background: "linear-gradient(0deg, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.92) 40%, rgba(0,0,0,0.6) 70%, transparent 100%)",
             pointerEvents: "none",
             zIndex: 4,
           }} />
 
-          {/* BOTTOM INFO PANEL */}
+          {/* SOLID NAME PLATE BLOCK */}
           <div style={{
             position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
             zIndex: 5,
-            padding: `${35 * s.fontSize}px ${10 * s.fontSize}px ${8 * s.fontSize}px`,
+            background: "rgba(0,0,0,0.85)",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            padding: `${8 * s.fontSize}px ${10 * s.fontSize}px ${8 * s.fontSize}px`,
           }}>
             <h3 style={{
               color: "#fff",
@@ -585,7 +596,6 @@ export default function EPLPlayerCard({
               </p>
             )}
 
-            {/* Age + position row */}
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -618,7 +628,7 @@ export default function EPLPlayerCard({
               </span>
             </div>
 
-            {/* STAT BARS — engraved/carved into card */}
+            {/* STAT BARS */}
             <div style={{
               display: "flex",
               justifyContent: "space-between",

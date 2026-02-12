@@ -1,4 +1,4 @@
-import { Text } from "@react-three/drei"
+import { Text, useTexture } from "@react-three/drei";
 import { useRef, useMemo, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -77,12 +77,13 @@ function ScoreBar({ scores }: { scores: number[] }) {
   );
 }
 
-function CardMesh({ rarity, mouse }: { rarity: RarityKey; mouse: React.RefObject<{x: number; y: number}> }) {
+function CardMesh({ rarity, mouse, playerImageUrl, rating }: { rarity: RarityKey; mouse: React.RefObject<{x: number; y: number}>; playerImageUrl: string; rating: number }) {
   const cardRef = useRef<THREE.Group>(null);
   const holoRef = useRef<THREE.Mesh>(null);
   const holoMatRef = useRef<THREE.ShaderMaterial>(null);
 
   const colors = rarityColors[rarity];
+  const playerTexture = useTexture(playerImageUrl);
 
   const geometry = useMemo(() => {
     const shape = new THREE.Shape();
@@ -142,14 +143,14 @@ function CardMesh({ rarity, mouse }: { rarity: RarityKey; mouse: React.RefObject
           return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
         }
         void main(){
-          float shine = sin((vUv.x + time)*15.0) * 0.5 + 0.5;
+          float sweep = smoothstep(0.2, 0.8, sin(vUv.x * 8.0 + time * 3.0));
           vec3 rainbow = vec3(
-            sin(time + vUv.x*5.0)*0.5+0.5,
-            sin(time + vUv.y*5.0 + 2.0)*0.5+0.5,
-            sin(time + vUv.x*5.0 + 4.0)*0.5+0.5
+            sin(time + vUv.x * 4.0) * 0.5 + 0.5,
+            sin(time + vUv.y * 4.0 + 2.0) * 0.5 + 0.5,
+            sin(time + vUv.x * 4.0 + 4.0) * 0.5 + 0.5
           );
-          float grain = noise(vUv * 200.0) * 0.1;
-          gl_FragColor = vec4(rainbow * shine + grain, 0.25);
+          float grain = noise(vUv * 300.0) * 0.08;
+          gl_FragColor = vec4(rainbow * sweep + grain, 0.28);
         }
       `,
     });
@@ -169,6 +170,26 @@ function CardMesh({ rarity, mouse }: { rarity: RarityKey; mouse: React.RefObject
   return (
     <group ref={cardRef}>
       <mesh geometry={geometry} material={baseMaterial} />
+
+      <mesh position={[0, 0, 0.08]}>
+        <planeGeometry args={[1.8, 2.6]} />
+        <meshStandardMaterial map={playerTexture} transparent />
+      </mesh>
+
+      <Text
+        position={[-0.75, 1.2, 0.09]}
+        fontSize={0.35}
+        anchorX="left"
+        anchorY="middle"
+      >
+        <meshPhysicalMaterial
+          metalness={1}
+          roughness={0.25}
+          color="#cccccc"
+        />
+        {rating.toString()}
+      </Text>
+
       <mesh ref={holoRef} geometry={geometry} renderOrder={1}>
         <primitive object={holoMaterial} ref={holoMatRef} attach="material" />
       </mesh>
@@ -254,7 +275,7 @@ export default function Card3D({
         <directionalLight position={[5, 5, 5]} intensity={3} />
         <directionalLight position={[-3, 2, 4]} intensity={1} />
         <pointLight position={[0, 0, 4]} intensity={0.5} />
-        <CardMesh rarity={rarity} mouse={mouseRef} />
+        <CardMesh rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} rating={card.player?.overall || 0} />
       </Canvas>
 
       <div

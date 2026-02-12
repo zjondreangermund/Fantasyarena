@@ -1,3 +1,4 @@
+import { Text } from "@react-three/drei"
 import { useRef, useMemo, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -154,15 +155,14 @@ function CardMesh({ rarity, mouse }: { rarity: RarityKey; mouse: React.RefObject
     });
   }, []);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (holoMatRef.current) {
-      holoMatRef.current.uniforms.time.value += delta * 0.8;
+      holoMatRef.current.uniforms.time.value += delta;
     }
+
     if (cardRef.current && mouse.current) {
-      const targetRotY = mouse.current.x * 0.35;
-      const targetRotX = mouse.current.y * 0.35;
-      cardRef.current.rotation.y += (targetRotY - cardRef.current.rotation.y) * 0.08;
-      cardRef.current.rotation.x += (targetRotX - cardRef.current.rotation.x) * 0.08;
+      cardRef.current.rotation.y = mouse.current.x * 0.4;
+      cardRef.current.rotation.x = -mouse.current.y * 0.4;
     }
   });
 

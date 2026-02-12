@@ -190,7 +190,7 @@ export default function PremierLeaguePage() {
                   ))}
                 </div>
               ) : filteredPlayers.length > 0 ? (
-                <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+                <div className="flex flex-wrap gap-8 justify-center sm:justify-start">
                   {filteredPlayers.map((player) => (
                     <EPLPlayerCard
                       key={player.id}

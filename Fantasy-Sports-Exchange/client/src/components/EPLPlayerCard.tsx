@@ -33,7 +33,6 @@ function assignRarity(player: EplPlayer): CardRarity {
   const goals = player.goals ?? 0;
   const assists = player.assists ?? 0;
   const apps = player.appearances ?? 0;
-
   if (rating >= 7.5 || goals >= 15) return "legendary";
   if (rating >= 7.2 || goals >= 10 || (goals + assists) >= 15) return "epic";
   if (rating >= 7.0 || goals >= 5 || assists >= 8) return "unique";
@@ -48,6 +47,86 @@ function getPositionShort(pos: string | null): string {
   };
   return map[pos] || pos.substring(0, 3).toUpperCase();
 }
+
+const rarityTheme: Record<CardRarity, {
+  face: string;
+  edgeDark: string;
+  edgeMid: string;
+  border: string;
+  glow: string;
+  label: string;
+  labelBg: string;
+  accent: string;
+  windowBg: string;
+  windowPattern: string;
+  windowBorder: string;
+}> = {
+  common: {
+    face: "linear-gradient(160deg, #8e9aaf 0%, #b8c4d4 25%, #a0aec0 50%, #8e9aaf 75%, #7a8899 100%)",
+    edgeDark: "#5a6575",
+    edgeMid: "#6b7a8d",
+    border: "rgba(200,210,225,0.5)",
+    glow: "0 10px 40px rgba(120,140,165,0.3)",
+    label: "COMMON",
+    labelBg: "rgba(100,120,140,0.9)",
+    accent: "#cbd5e1",
+    windowBg: "linear-gradient(135deg, rgba(80,95,115,0.6), rgba(60,75,95,0.8))",
+    windowPattern: "repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 12px)",
+    windowBorder: "rgba(180,195,215,0.4)",
+  },
+  rare: {
+    face: "linear-gradient(160deg, #b91c1c 0%, #dc2626 20%, #ef4444 45%, #dc2626 65%, #b91c1c 90%, #991b1b 100%)",
+    edgeDark: "#6f1010",
+    edgeMid: "#991b1b",
+    border: "rgba(248,113,113,0.5)",
+    glow: "0 10px 50px rgba(220,38,38,0.35), 0 0 80px rgba(239,68,68,0.12)",
+    label: "RARE",
+    labelBg: "rgba(185,28,28,0.95)",
+    accent: "#fca5a5",
+    windowBg: "linear-gradient(135deg, rgba(153,27,27,0.5), rgba(127,29,29,0.7))",
+    windowPattern: "repeating-linear-gradient(60deg, transparent, transparent 8px, rgba(255,255,255,0.04) 8px, rgba(255,255,255,0.04) 16px)",
+    windowBorder: "rgba(248,113,113,0.4)",
+  },
+  unique: {
+    face: "linear-gradient(160deg, #6d28d9 0%, #7c3aed 15%, #a855f7 30%, #ec4899 50%, #f97316 70%, #eab308 85%, #22c55e 100%)",
+    edgeDark: "#4c1d95",
+    edgeMid: "#6d28d9",
+    border: "rgba(168,85,247,0.5)",
+    glow: "0 10px 50px rgba(124,58,237,0.35), 0 0 80px rgba(236,72,153,0.12)",
+    label: "UNIQUE",
+    labelBg: "linear-gradient(135deg, #6d28d9 0%, #db2777 100%)",
+    accent: "#e9d5ff",
+    windowBg: "linear-gradient(135deg, rgba(109,40,217,0.4), rgba(219,39,119,0.4))",
+    windowPattern: "repeating-conic-gradient(rgba(255,255,255,0.04) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px",
+    windowBorder: "rgba(196,130,255,0.4)",
+  },
+  epic: {
+    face: "linear-gradient(160deg, #0f0f23 0%, #1a1a3e 20%, #22225a 40%, #1a1a3e 60%, #0f0f23 80%, #0a0a18 100%)",
+    edgeDark: "#050510",
+    edgeMid: "#0f0f23",
+    border: "rgba(99,102,241,0.35)",
+    glow: "0 10px 50px rgba(79,70,229,0.25), 0 0 80px rgba(99,102,241,0.1)",
+    label: "EPIC",
+    labelBg: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
+    accent: "#a5b4fc",
+    windowBg: "linear-gradient(135deg, rgba(30,27,75,0.5), rgba(49,46,129,0.5))",
+    windowPattern: "repeating-linear-gradient(30deg, transparent, transparent 10px, rgba(99,102,241,0.03) 10px, rgba(99,102,241,0.03) 20px)",
+    windowBorder: "rgba(129,140,248,0.3)",
+  },
+  legendary: {
+    face: "linear-gradient(160deg, #92400e 0%, #b45309 15%, #d97706 30%, #fbbf24 50%, #f59e0b 65%, #d97706 80%, #92400e 100%)",
+    edgeDark: "#5c2d06",
+    edgeMid: "#78350f",
+    border: "rgba(252,211,77,0.6)",
+    glow: "0 10px 60px rgba(245,158,11,0.4), 0 0 100px rgba(251,191,36,0.15)",
+    label: "LEGENDARY",
+    labelBg: "linear-gradient(135deg, #92400e 0%, #d97706 100%)",
+    accent: "#fef3c7",
+    windowBg: "linear-gradient(135deg, rgba(146,64,14,0.4), rgba(120,53,15,0.5))",
+    windowPattern: "repeating-conic-gradient(rgba(251,191,36,0.06) 0% 25%, transparent 0% 50%) 0 0 / 14px 14px",
+    windowBorder: "rgba(252,211,77,0.5)",
+  },
+};
 
 interface EPLPlayerCardProps {
   player: EplPlayer;
@@ -64,29 +143,29 @@ export default function EPLPlayerCard({
 }: EPLPlayerCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
   const shineRef = useRef<HTMLDivElement>(null);
 
   const rarity = forceRarity || assignRarity(player);
+  const theme = rarityTheme[rarity];
   const posShort = getPositionShort(player.position);
   const totalXP = calculateTotalXP(player);
   const { level } = calculateLevel(totalXP);
   const rating = player.rating ? parseFloat(player.rating).toFixed(1) : "—";
 
   const sizeMap = {
-    sm: { w: 200, h: 290 },
-    md: { w: 260, h: 370 },
-    lg: { w: 310, h: 440 },
+    sm: { w: 190, h: 280, edge: 10, radius: 14, imgInset: 10, fontSize: 0.8 },
+    md: { w: 240, h: 350, edge: 12, radius: 16, imgInset: 12, fontSize: 1 },
+    lg: { w: 290, h: 420, edge: 14, radius: 18, imgInset: 14, fontSize: 1.2 },
   };
   const s = sizeMap[size];
 
-  const rarityAccent: Record<CardRarity, string> = {
-    common: "rgba(180,195,215,0.5)",
-    rare: "rgba(239,68,68,0.5)",
-    unique: "rgba(168,85,247,0.5)",
-    epic: "rgba(100,100,180,0.5)",
-    legendary: "rgba(251,191,36,0.5)",
-  };
+  const stats = [
+    { label: "PAC", value: Math.min(99, 55 + (player.goals ?? 0) * 2 + (player.assists ?? 0)) },
+    { label: "SHO", value: Math.min(99, 40 + (player.goals ?? 0) * 4) },
+    { label: "PAS", value: Math.min(99, 50 + (player.assists ?? 0) * 4 + (player.appearances ?? 0)) },
+    { label: "DEF", value: Math.min(99, player.position === "Defender" || player.position === "Goalkeeper" ? 70 + (player.appearances ?? 0) : 35 + (player.appearances ?? 0)) },
+    { label: "PHY", value: Math.min(99, 55 + Math.floor((player.minutes ?? 0) / 200)) },
+  ];
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!cardRef.current || !innerRef.current) return;
@@ -95,25 +174,18 @@ export default function EPLPlayerCard({
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-
-    const rotateX = ((y - centerY) / centerY) * -15;
-    const rotateY = ((x - centerX) / centerX) * 15;
-
-    innerRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05,1.05,1.05)`;
-
-    if (glowRef.current) {
-      glowRef.current.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(0,255,133,0.25) 0%, transparent 60%)`;
-    }
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
+    innerRef.current.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.04,1.04,1.04)`;
     if (shineRef.current) {
-      shineRef.current.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.2) 0%, transparent 50%)`;
+      shineRef.current.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.18) 0%, transparent 55%)`;
       shineRef.current.style.opacity = "1";
     }
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     if (!innerRef.current) return;
-    innerRef.current.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
-    if (glowRef.current) glowRef.current.style.background = "transparent";
+    innerRef.current.style.transform = "rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
     if (shineRef.current) shineRef.current.style.opacity = "0";
   }, []);
 
@@ -128,184 +200,240 @@ export default function EPLPlayerCard({
     };
   }, [handleMouseMove, handleMouseLeave]);
 
-  const stats = [
-    { label: "PAC", value: Math.min(99, 55 + (player.goals ?? 0) * 2 + (player.assists ?? 0)) },
-    { label: "SHO", value: Math.min(99, 40 + (player.goals ?? 0) * 4) },
-    { label: "PAS", value: Math.min(99, 50 + (player.assists ?? 0) * 4 + (player.appearances ?? 0)) },
-    { label: "DEF", value: Math.min(99, player.position === "Defender" || player.position === "Goalkeeper" ? 70 + (player.appearances ?? 0) : 35 + (player.appearances ?? 0)) },
-    { label: "PHY", value: Math.min(99, 55 + Math.floor((player.minutes ?? 0) / 200)) },
-  ];
+  const totalW = s.w + s.edge;
+  const totalH = s.h + s.edge;
 
   return (
     <div
       ref={cardRef}
       className="cursor-pointer"
-      style={{ width: s.w, height: s.h, perspective: "1000px" }}
+      style={{
+        width: totalW,
+        height: totalH,
+        perspective: "800px",
+      }}
       onClick={onClick}
     >
       <div
         ref={innerRef}
         style={{
-          width: "100%",
-          height: "100%",
-          transformStyle: "preserve-3d",
-          transition: "transform 0.15s ease-out",
+          width: totalW,
+          height: totalH,
           position: "relative",
+          transformStyle: "preserve-3d",
+          transition: "transform 0.2s ease-out",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: -2,
-            borderRadius: 18,
-            background: `linear-gradient(135deg, #3d195b 0%, #1a0a2e 40%, #0d0520 60%, #3d195b 100%)`,
-            zIndex: 0,
-          }}
-        />
+        {/* RIGHT EDGE — thick side slab */}
+        <div style={{
+          position: "absolute",
+          top: 4,
+          right: 0,
+          width: s.edge,
+          height: s.h - 8,
+          background: `linear-gradient(180deg, ${theme.edgeMid} 0%, ${theme.edgeDark} 40%, ${theme.edgeDark} 100%)`,
+          borderRadius: `0 ${s.radius - 2}px ${s.radius - 2}px 0`,
+          transform: `translateZ(-${s.edge}px)`,
+          boxShadow: `inset -2px 0 6px rgba(0,0,0,0.4), inset 1px 0 2px rgba(255,255,255,0.05)`,
+          zIndex: 0,
+        }} />
 
-        <div
-          style={{
-            position: "absolute",
-            inset: -2,
-            borderRadius: 18,
-            background: `linear-gradient(135deg, ${rarityAccent[rarity]}, transparent 40%, ${rarityAccent[rarity]})`,
-            zIndex: 0,
-            opacity: 0.6,
-          }}
-        />
+        {/* BOTTOM EDGE — thick bottom slab */}
+        <div style={{
+          position: "absolute",
+          bottom: 0,
+          left: 4,
+          right: 4,
+          height: s.edge,
+          background: `linear-gradient(90deg, ${theme.edgeDark} 0%, ${theme.edgeMid} 30%, ${theme.edgeDark} 100%)`,
+          borderRadius: `0 0 ${s.radius - 2}px ${s.radius - 2}px`,
+          transform: `translateZ(-${s.edge}px)`,
+          boxShadow: `inset 0 -2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.05)`,
+          zIndex: 0,
+        }} />
 
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            height: "100%",
-            borderRadius: 16,
-            overflow: "hidden",
-            background: "linear-gradient(160deg, rgba(61,25,91,0.85) 0%, rgba(26,10,46,0.9) 30%, rgba(13,5,32,0.95) 60%, rgba(61,25,91,0.85) 100%)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(0,255,133,0.15)",
-            boxShadow: `0 8px 32px rgba(61,25,91,0.4), 0 0 60px rgba(0,255,133,0.08), inset 0 1px 0 rgba(255,255,255,0.1)`,
+        {/* MAIN CARD FACE */}
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: s.w,
+          height: s.h,
+          borderRadius: s.radius,
+          background: theme.face,
+          border: `2px solid ${theme.border}`,
+          borderRight: `${s.edge}px solid ${theme.edgeMid}`,
+          borderBottom: `${s.edge}px solid ${theme.edgeDark}`,
+          boxShadow: `
+            ${theme.glow},
+            inset 0 0 15px rgba(255,255,255,0.2),
+            inset 0 1px 0 rgba(255,255,255,0.3),
+            inset 0 -1px 0 rgba(0,0,0,0.2)
+          `,
+          overflow: "hidden",
+          zIndex: 2,
+        }}>
+          {/* Surface pattern overlay */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: theme.windowPattern,
+            pointerEvents: "none",
             zIndex: 1,
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)",
-              pointerEvents: "none",
-              zIndex: 1,
-            }}
-          />
+          }} />
 
-          <div
-            ref={glowRef}
-            style={{
-              position: "absolute",
-              inset: 0,
-              borderRadius: 16,
-              pointerEvents: "none",
-              zIndex: 2,
-              transition: "background 0.2s ease",
-            }}
-          />
+          {/* Top-left glass highlight */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 20%, transparent 40%)",
+            pointerEvents: "none",
+            zIndex: 2,
+          }} />
 
+          {/* Hover shine layer */}
           <div
             ref={shineRef}
             style={{
               position: "absolute",
               inset: 0,
-              borderRadius: 16,
               pointerEvents: "none",
-              zIndex: 10,
+              zIndex: 20,
               opacity: 0,
               transition: "opacity 0.3s ease",
+              mixBlendMode: "overlay",
             }}
           />
 
+          {/* HEADER BAR */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: `${4 * s.fontSize}px ${8 * s.fontSize}px`,
+            background: "rgba(0,0,0,0.25)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            position: "relative",
+            zIndex: 5,
+          }}>
+            <span style={{
+              color: "rgba(255,255,255,0.8)",
+              fontWeight: 700,
+              fontSize: 9 * s.fontSize,
+              letterSpacing: "0.08em",
+            }}>
+              2024-25
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {player.teamLogo && (
+                <img src={player.teamLogo} alt="" style={{ width: 14 * s.fontSize, height: 14 * s.fontSize, objectFit: "contain" }} />
+              )}
+              <span style={{
+                color: "rgba(255,255,255,0.7)",
+                fontWeight: 600,
+                fontSize: 9 * s.fontSize,
+              }}>
+                #{player.number || "—"}
+              </span>
+            </div>
+          </div>
+
+          {/* RATING + POSITION — top left */}
           <div style={{
             position: "absolute",
-            top: size === "sm" ? 10 : 14,
-            left: size === "sm" ? 10 : 14,
+            top: 28 * s.fontSize,
+            left: 8 * s.fontSize,
             zIndex: 5,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 2,
+            gap: 1,
           }}>
             <span style={{
-              color: "#00ff85",
+              color: "#fff",
               fontWeight: 900,
-              fontSize: size === "sm" ? 28 : size === "md" ? 36 : 44,
+              fontSize: 26 * s.fontSize,
               lineHeight: 1,
-              textShadow: "0 0 20px rgba(0,255,133,0.4), 0 2px 4px rgba(0,0,0,0.5)",
+              textShadow: "0 2px 8px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.15)",
               fontFamily: "'Inter', system-ui, sans-serif",
-              letterSpacing: "-0.02em",
             }}>
               {rating}
             </span>
             <span style={{
-              color: "#00ff85",
+              background: "rgba(0,0,0,0.4)",
+              color: theme.accent,
               fontWeight: 800,
-              fontSize: size === "sm" ? 11 : size === "md" ? 13 : 15,
-              letterSpacing: "0.15em",
-              textShadow: "0 0 10px rgba(0,255,133,0.3)",
+              fontSize: 8 * s.fontSize,
+              letterSpacing: "0.12em",
+              padding: `1px ${5 * s.fontSize}px`,
+              borderRadius: 3,
             }}>
               {posShort}
             </span>
-            {player.teamLogo && (
-              <img
-                src={player.teamLogo}
-                alt=""
-                style={{
-                  width: size === "sm" ? 22 : size === "md" ? 28 : 34,
-                  height: size === "sm" ? 22 : size === "md" ? 28 : 34,
-                  objectFit: "contain",
-                  marginTop: 4,
-                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
-                }}
-              />
-            )}
-          </div>
-
-          <div style={{
-            position: "absolute",
-            top: size === "sm" ? 10 : 14,
-            right: size === "sm" ? 10 : 14,
-            zIndex: 5,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-            background: "rgba(0,255,133,0.08)",
-            border: "1px solid rgba(0,255,133,0.2)",
-            borderRadius: 8,
-            padding: "4px 8px",
-          }}>
             <span style={{
-              color: "#00ff85",
-              fontWeight: 900,
-              fontSize: size === "sm" ? 12 : 14,
-              textShadow: "0 0 10px rgba(0,255,133,0.3)",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: 7 * s.fontSize,
+              letterSpacing: "0.1em",
+              marginTop: 2,
+              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
             }}>
               Lv.{level}
             </span>
           </div>
 
+          {/* RARITY LABEL — top right */}
+          <div style={{
+            position: "absolute",
+            top: 28 * s.fontSize,
+            right: 8 * s.fontSize,
+            zIndex: 5,
+          }}>
+            <span style={{
+              background: theme.labelBg,
+              color: theme.accent,
+              fontWeight: 900,
+              fontSize: 7 * s.fontSize,
+              letterSpacing: "0.12em",
+              padding: `2px ${5 * s.fontSize}px`,
+              borderRadius: 3,
+              textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+            }}>
+              {theme.label}
+            </span>
+          </div>
+
+          {/* RECESSED IMAGE WINDOW */}
           <div style={{
             position: "absolute",
             top: "50%",
             left: "50%",
-            transform: "translate(-50%, -55%) translateZ(30px)",
-            transformStyle: "preserve-3d",
-            width: size === "sm" ? "60%" : "65%",
-            aspectRatio: "3/4",
+            transform: "translate(-50%, -52%)",
+            width: `${62}%`,
+            aspectRatio: "4/5",
             zIndex: 3,
-            borderRadius: 12,
+            borderRadius: 10 * s.fontSize,
             overflow: "hidden",
-            boxShadow: "0 15px 40px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,133,0.1)",
+            background: theme.windowBg,
+            border: `2px solid ${theme.windowBorder}`,
+            boxShadow: `
+              inset 0 4px 15px rgba(0,0,0,0.5),
+              inset 0 -2px 10px rgba(0,0,0,0.3),
+              inset 3px 0 10px rgba(0,0,0,0.25),
+              inset -3px 0 10px rgba(0,0,0,0.25),
+              0 4px 20px rgba(0,0,0,0.3)
+            `,
           }}>
+            {/* Inner bevel highlight */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: 10 * s.fontSize,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.3)",
+              pointerEvents: "none",
+              zIndex: 3,
+            }} />
+
             {player.photo ? (
               <img
                 src={player.photo}
@@ -315,7 +443,7 @@ export default function EPLPlayerCard({
                   height: "100%",
                   objectFit: "cover",
                   objectPosition: "top center",
-                  filter: "contrast(1.1) saturate(1.15)",
+                  filter: "contrast(1.08) saturate(1.12)",
                 }}
               />
             ) : (
@@ -325,72 +453,115 @@ export default function EPLPlayerCard({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "linear-gradient(135deg, rgba(61,25,91,0.8), rgba(13,5,32,0.9))",
+                background: "rgba(0,0,0,0.3)",
               }}>
-                <span style={{ color: "rgba(0,255,133,0.3)", fontSize: size === "sm" ? 44 : 56, fontWeight: 900 }}>
+                <span style={{
+                  color: "rgba(255,255,255,0.2)",
+                  fontSize: 48 * s.fontSize,
+                  fontWeight: 900,
+                }}>
                   {player.name?.charAt(0)}
                 </span>
               </div>
             )}
 
+            {/* Bottom fade inside window */}
             <div style={{
               position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
-              height: "40%",
-              background: "linear-gradient(transparent, rgba(13,5,32,0.95))",
+              height: "30%",
+              background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
               pointerEvents: "none",
+              zIndex: 2,
             }} />
           </div>
 
+          {/* BOTTOM INFO PANEL */}
           <div style={{
             position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
             zIndex: 5,
-            background: "linear-gradient(0deg, rgba(13,5,32,0.98) 0%, rgba(13,5,32,0.95) 40%, rgba(13,5,32,0.7) 70%, transparent 100%)",
-            padding: size === "sm" ? "40px 12px 10px" : "50px 16px 14px",
+            background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.5) 75%, transparent 100%)",
+            padding: `${35 * s.fontSize}px ${10 * s.fontSize}px ${8 * s.fontSize}px`,
           }}>
+            {/* Player name — etched look */}
             <h3 style={{
               color: "#fff",
               fontWeight: 900,
-              fontSize: size === "sm" ? 15 : size === "md" ? 19 : 22,
+              fontSize: 17 * s.fontSize,
               textAlign: "center",
               textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              textShadow: "0 2px 8px rgba(0,0,0,0.5)",
+              letterSpacing: "0.15em",
               lineHeight: 1.1,
-              marginBottom: 2,
+              textShadow: "0 2px 0 rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.08)",
+              marginBottom: 1,
             }}>
               {player.lastname || player.name?.split(" ").slice(-1)[0] || "Unknown"}
             </h3>
             {player.firstname && (
               <p style={{
-                color: "rgba(255,255,255,0.45)",
-                fontSize: size === "sm" ? 8 : 10,
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 8 * s.fontSize,
                 textAlign: "center",
                 textTransform: "uppercase",
                 letterSpacing: "0.2em",
-                marginBottom: size === "sm" ? 6 : 10,
+                textShadow: "0 1px 0 rgba(0,0,0,0.5)",
+                marginBottom: 2,
               }}>
                 {player.firstname}
               </p>
             )}
 
+            {/* Age + position row */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              margin: `${4 * s.fontSize}px 0`,
+            }}>
+              <span style={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 8 * s.fontSize,
+                textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+              }}>
+                AGE <strong style={{ color: "#fff" }}>{player.age || "—"}</strong>
+              </span>
+              <span style={{
+                color: theme.accent,
+                fontWeight: 800,
+                fontSize: 8 * s.fontSize,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+              }}>
+                {player.position || "Unknown"}
+              </span>
+              <span style={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 8 * s.fontSize,
+                textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+              }}>
+                {player.nationality?.substring(0, 3).toUpperCase() || ""}
+              </span>
+            </div>
+
+            {/* STAT BARS */}
             <div style={{
               display: "flex",
               justifyContent: "space-between",
-              gap: size === "sm" ? 3 : 4,
-              padding: size === "sm" ? "6px 0 0" : "8px 0 0",
-              borderTop: "1px solid rgba(0,255,133,0.15)",
+              gap: 3 * s.fontSize,
+              paddingTop: 5 * s.fontSize,
+              borderTop: "1px solid rgba(255,255,255,0.1)",
             }}>
               {stats.map(({ label, value }) => (
-                <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                   <span style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: size === "sm" ? 7 : size === "md" ? 8 : 9,
+                    color: "rgba(255,255,255,0.45)",
+                    fontSize: 7 * s.fontSize,
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                   }}>
@@ -398,29 +569,30 @@ export default function EPLPlayerCard({
                   </span>
                   <div style={{
                     width: "100%",
-                    height: size === "sm" ? 3 : 4,
+                    height: 4 * s.fontSize,
                     borderRadius: 2,
                     background: "rgba(255,255,255,0.08)",
                     overflow: "hidden",
+                    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
                   }}>
                     <div style={{
                       width: `${value}%`,
                       height: "100%",
                       borderRadius: 2,
                       background: value >= 80
-                        ? "linear-gradient(90deg, #00ff85, #00cc6a)"
+                        ? `linear-gradient(90deg, ${theme.accent}, #fff)`
                         : value >= 60
-                        ? "linear-gradient(90deg, #00ff85, #7cff85)"
-                        : "linear-gradient(90deg, rgba(0,255,133,0.5), rgba(0,255,133,0.3))",
-                      boxShadow: value >= 70 ? "0 0 8px rgba(0,255,133,0.4)" : "none",
+                        ? `linear-gradient(90deg, ${theme.accent}99, ${theme.accent}66)`
+                        : `linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.15))`,
+                      boxShadow: value >= 75 ? `0 0 6px ${theme.accent}66` : "none",
                       transition: "width 0.6s ease-out",
                     }} />
                   </div>
                   <span style={{
-                    color: value >= 80 ? "#00ff85" : "#fff",
+                    color: value >= 80 ? theme.accent : "#fff",
                     fontWeight: 800,
-                    fontSize: size === "sm" ? 9 : size === "md" ? 11 : 13,
-                    textShadow: value >= 80 ? "0 0 8px rgba(0,255,133,0.4)" : "none",
+                    fontSize: 10 * s.fontSize,
+                    textShadow: value >= 80 ? `0 0 6px ${theme.accent}55` : "0 1px 2px rgba(0,0,0,0.5)",
                   }}>
                     {value}
                   </span>
@@ -428,15 +600,6 @@ export default function EPLPlayerCard({
               ))}
             </div>
           </div>
-
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: `repeating-conic-gradient(rgba(255,255,255,0.01) 0% 25%, transparent 0% 50%) 0 0 / 20px 20px`,
-            pointerEvents: "none",
-            zIndex: 1,
-            opacity: 0.5,
-          }} />
         </div>
       </div>
     </div>

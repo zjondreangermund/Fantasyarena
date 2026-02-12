@@ -140,13 +140,13 @@ export default function CollectionPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="w-48 h-72 rounded-md" />
             ))}
           </div>
         ) : filteredCards && filteredCards.length > 0 ? (
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-6">
             {filteredCards.map((card) => {
               const isInLineup = lineupData?.lineup?.cardIds?.includes(card.id);
               return (

@@ -48,6 +48,12 @@ function getPositionShort(pos: string | null): string {
   return map[pos] || pos.substring(0, 3).toUpperCase();
 }
 
+const LION_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' opacity='0.06'%3E%3Cpath d='M50 5 C30 5 15 20 15 40 C15 55 25 65 30 70 L25 85 L30 90 L35 82 L40 95 L45 88 L50 100 L55 88 L60 95 L65 82 L70 90 L75 85 L70 70 C75 65 85 55 85 40 C85 20 70 5 50 5Z M35 35 C38 35 40 37 40 40 C40 43 38 45 35 45 C32 45 30 43 30 40 C30 37 32 35 35 35Z M65 35 C68 35 70 37 70 40 C70 43 68 45 65 45 C62 45 60 43 60 40 C60 37 62 35 65 35Z M40 55 C40 55 45 62 50 62 C55 62 60 55 60 55' fill='white' stroke='none'/%3E%3C/svg%3E")`;
+
+const NOISE_SVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`;
+
+const GEO_PATTERN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='0.5'%3E%3Cpath d='M30 0L60 30L30 60L0 30Z'/%3E%3Cpath d='M30 10L50 30L30 50L10 30Z'/%3E%3Cpath d='M0 0L30 0L15 15Z'/%3E%3Cpath d='M60 0L60 30L45 15Z'/%3E%3Cpath d='M60 60L30 60L45 45Z'/%3E%3Cpath d='M0 60L0 30L15 45Z'/%3E%3C/g%3E%3C/svg%3E")`;
+
 const rarityTheme: Record<CardRarity, {
   face: string;
   edgeDark: string;
@@ -280,22 +286,50 @@ export default function EPLPlayerCard({
           overflow: "hidden",
           zIndex: 2,
         }}>
-          {/* Surface pattern overlay */}
+          {/* BRUSHED METAL NOISE TEXTURE */}
           <div style={{
             position: "absolute",
             inset: 0,
-            background: theme.windowPattern,
+            backgroundImage: NOISE_SVG,
+            backgroundSize: "128px 128px",
+            pointerEvents: "none",
+            zIndex: 1,
+            mixBlendMode: "overlay",
+          }} />
+
+          {/* GEOMETRIC DIAMOND PATTERN */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: GEO_PATTERN,
+            backgroundSize: "60px 60px",
             pointerEvents: "none",
             zIndex: 1,
           }} />
 
-          {/* Top-left glass highlight */}
+          {/* GLASS SHINE overlay */}
           <div style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 20%, transparent 40%)",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 25%, transparent 50%, rgba(255,255,255,0.02) 75%, transparent 100%)",
             pointerEvents: "none",
             zIndex: 2,
+          }} />
+
+          {/* PREMIER LEAGUE LION WATERMARK */}
+          <div style={{
+            position: "absolute",
+            top: "8%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "70%",
+            height: "55%",
+            backgroundImage: LION_SVG,
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            pointerEvents: "none",
+            zIndex: 1,
           }} />
 
           {/* Hover shine layer */}
@@ -437,6 +471,7 @@ export default function EPLPlayerCard({
             background: theme.windowBg,
             border: `2px solid ${theme.windowBorder}`,
             boxShadow: `
+              inset 0 0 15px rgba(0,0,0,0.6),
               inset 0 4px 15px rgba(0,0,0,0.5),
               inset 0 -2px 10px rgba(0,0,0,0.3),
               inset 3px 0 10px rgba(0,0,0,0.25),
@@ -498,6 +533,18 @@ export default function EPLPlayerCard({
             }} />
           </div>
 
+          {/* DARK BOTTOM HALF */}
+          <div style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "55%",
+            background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.5) 65%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 4,
+          }} />
+
           {/* BOTTOM INFO PANEL */}
           <div style={{
             position: "absolute",
@@ -505,7 +552,6 @@ export default function EPLPlayerCard({
             left: 0,
             right: 0,
             zIndex: 5,
-            background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.88) 50%, rgba(0,0,0,0.5) 75%, transparent 100%)",
             padding: `${35 * s.fontSize}px ${10 * s.fontSize}px ${8 * s.fontSize}px`,
           }}>
             <h3 style={{

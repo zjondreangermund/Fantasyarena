@@ -81,7 +81,7 @@ function CardMesh({ rarity, playerImageUrl, hovered }: {
     shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); shape.lineTo(-w / 2, -h / 2 + r);
     shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
     const geo = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.35, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 8,
+      depth: 0.7, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08, bevelSegments: 8,
     });
     geo.center();
     return geo;
@@ -300,21 +300,19 @@ export default function Card3D({
           className="card-content"
           style={{
             position: "absolute",
-            inset: 0,
+            top: "13%", left: "13%", right: "13%", bottom: "13%",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: size === "sm" ? "6px 8px 5px" : size === "lg" ? "10px 12px 8px" : "8px 10px 6px",
             zIndex: 10,
             pointerEvents: "none",
-            borderRadius: 14,
           }}
         >
-          {/* TOP ROW: Rating left, Serial + Tier right */}
+          {/* TOP ROW: Rating + Position left, Serial + Tier right */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{
-                fontSize: size === "sm" ? 22 : size === "lg" ? 30 : 26,
+                fontSize: size === "sm" ? 20 : size === "lg" ? 28 : 24,
                 fontWeight: 900, color: "#fff",
                 textShadow: "0 2px 6px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)",
                 lineHeight: 1, fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
@@ -332,7 +330,7 @@ export default function Card3D({
             <div style={{ textAlign: "right" }}>
               {serialText && (
                 <div style={{
-                  fontSize: size === "sm" ? 6 : size === "lg" ? 9 : 7, fontWeight: 700,
+                  fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7, fontWeight: 700,
                   color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em",
                   textShadow: "0 1px 2px rgba(0,0,0,0.6)",
                 }}>
@@ -350,34 +348,34 @@ export default function Card3D({
             </div>
           </div>
 
-          {/* BOTTOM: Name, Club, Level */}
+          {/* BOTTOM: Name, Club, Position, Level, DS */}
           <div style={{ textAlign: "center" }}>
             <div style={{
-              fontSize: size === "sm" ? 10 : size === "lg" ? 14 : 12,
+              fontSize: size === "sm" ? 9 : size === "lg" ? 13 : 11,
               fontWeight: 900, color: "#fff", letterSpacing: "0.06em",
               textShadow: "0 2px 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.4)",
               textTransform: "uppercase", fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
               lineHeight: 1.1,
             }}>
-              {(card.player?.name || "Unknown").substring(0, 18)}
+              {(card.player?.name || "Unknown").substring(0, 16)}
             </div>
             <div style={{
-              fontSize: size === "sm" ? 7 : size === "lg" ? 9 : 8,
-              fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.1em",
+              fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7,
+              fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.1em",
               textTransform: "uppercase", marginTop: 1,
               textShadow: "0 1px 3px rgba(0,0,0,0.7)",
             }}>
-              {(card.player?.team || "Unknown").substring(0, 22)}
+              {(card.player?.team || "Unknown").substring(0, 20)}
             </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: size === "sm" ? 6 : 10, marginTop: 2 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: size === "sm" ? 5 : 8, marginTop: 2 }}>
               <span style={{
-                fontSize: size === "sm" ? 7 : size === "lg" ? 9 : 8, fontWeight: 800, color: "#facc15",
+                fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7, fontWeight: 800, color: "#facc15",
                 letterSpacing: "0.04em", textShadow: "0 1px 2px rgba(0,0,0,0.6)",
               }}>
                 LV.{card.level || 1}
               </span>
               <span style={{
-                fontSize: size === "sm" ? 7 : size === "lg" ? 9 : 8, fontWeight: 800, color: dsColor,
+                fontSize: size === "sm" ? 6 : size === "lg" ? 8 : 7, fontWeight: 800, color: dsColor,
                 letterSpacing: "0.04em", textShadow: "0 1px 2px rgba(0,0,0,0.6)",
               }}>
                 DS {card.decisiveScore || 35}

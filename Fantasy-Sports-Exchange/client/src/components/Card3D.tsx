@@ -152,15 +152,12 @@ export default function Card3D({
   const rarity = (card.rarity as RarityKey) || "common";
   const styles = rarityStyles[rarity];
 
-  const edge = 12;
   const sizeMap = {
     sm: { w: 170, h: 250, fontSize: 0.75 },
     md: { w: 220, h: 320, fontSize: 1 },
     lg: { w: 270, h: 390, fontSize: 1.2 },
   };
   const s = sizeMap[size];
-  const totalW = s.w + edge;
-  const totalH = s.h + edge;
 
   const imageIndex = ((card.playerId - 1) % 6) + 1;
   const fallbackImage = card.player?.imageUrl || `/images/player-${imageIndex}.png`;
@@ -228,8 +225,8 @@ export default function Card3D({
     <div
       ref={containerRef}
       style={{
-        width: totalW,
-        height: totalH,
+        width: s.w,
+        height: s.h,
         perspective: 800,
         cursor: selectable ? "pointer" : "default",
       }}
@@ -241,59 +238,20 @@ export default function Card3D({
     >
       <div
         style={{
-          width: totalW,
-          height: totalH,
+          width: "100%",
+          height: "100%",
           position: "relative",
+          borderRadius: 14,
           transformStyle: "preserve-3d",
           transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
           transition: hovered ? "transform 0.05s ease-out" : "transform 0.4s ease-out",
+          boxShadow: selected
+            ? `0 0 0 3px hsl(250,85%,65%), ${styles.glow}`
+            : styles.glow,
+          background: styles.gradient,
+          overflow: "hidden",
         }}
       >
-        {/* RIGHT EDGE */}
-        <div style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: edge,
-          height: s.h,
-          background: `linear-gradient(180deg, ${styles.edgeMid} 0%, ${styles.edgeDark} 40%, ${styles.edgeDark} 100%)`,
-          borderRadius: `0 14px 14px 0`,
-          transform: `translateZ(-${edge}px)`,
-          boxShadow: `inset -2px 0 6px rgba(0,0,0,0.4), inset 1px 0 2px rgba(255,255,255,0.05)`,
-          zIndex: 0,
-        }} />
-
-        {/* BOTTOM EDGE */}
-        <div style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: edge,
-          background: `linear-gradient(90deg, ${styles.edgeDark} 0%, ${styles.edgeMid} 30%, ${styles.edgeDark} 100%)`,
-          borderRadius: `0 0 14px 14px`,
-          transform: `translateZ(-${edge}px)`,
-          boxShadow: `inset 0 -2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.05)`,
-          zIndex: 0,
-        }} />
-
-        {/* MAIN CARD FACE */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: s.w,
-            height: s.h,
-            borderRadius: 14,
-            background: styles.gradient,
-            boxShadow: selected
-              ? `0 0 0 3px hsl(250,85%,65%), ${styles.glow}, inset 0px 1px 1px rgba(255,255,255,0.4), inset 0px -1px 1px rgba(0,0,0,0.4)`
-              : `${styles.glow}, inset 0px 1px 1px rgba(255,255,255,0.4), inset 0px -1px 1px rgba(0,0,0,0.4)`,
-            overflow: "hidden",
-            zIndex: 2,
-          }}
-        >
           <div
             style={{
               position: "absolute",
@@ -537,7 +495,6 @@ export default function Card3D({
               transition: "background 0.1s ease-out",
             }}
           />
-        </div>
       </div>
 
       {showPrice && card.forSale && (

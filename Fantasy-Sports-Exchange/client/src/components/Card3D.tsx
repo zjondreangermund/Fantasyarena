@@ -398,24 +398,46 @@ export default function Card3D({
       data-testid={`player-card-${card.id}`}
     >
       {webglActive ? (
-        <CanvasErrorBoundary
-          fallback={<div style={{ width: "100%", height: "100%", borderRadius: 14, background: style.gradient }} />}
-          onError={() => { setWebglActive(false); setWebglFailed(true); releaseWebgl(card.id); }}
-        >
-          <Canvas
-            camera={{ position: [0, 0, 4.5], fov: 45 }}
-            dpr={[1, 1.5]}
-            style={{ width: "100%", height: "100%", borderRadius: 14, pointerEvents: "none" }}
-            gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
-            onCreated={({ gl }) => { gl.setClearColor(0x000000, 0); }}
+        <div style={{
+          width: "100%", height: "100%", position: "relative",
+          transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
+          transformStyle: "preserve-3d",
+          transition: hovered ? "none" : "transform 0.4s ease-out",
+        }}>
+          <CanvasErrorBoundary
+            fallback={<div style={{ width: "100%", height: "100%", borderRadius: 14, background: style.gradient }} />}
+            onError={() => { setWebglActive(false); setWebglFailed(true); releaseWebgl(card.id); }}
           >
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[5, 5, 5]} intensity={3} />
-            <directionalLight position={[-3, 2, 4]} intensity={1} />
-            <pointLight position={[0, 0, 4]} intensity={0.5} />
-            <CardBody rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} hovered={hovered} />
-          </Canvas>
-        </CanvasErrorBoundary>
+            <Canvas
+              camera={{ position: [0, 0, 4.5], fov: 45 }}
+              dpr={[1, 1.5]}
+              style={{ width: "100%", height: "100%", borderRadius: 14, pointerEvents: "none" }}
+              gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
+              onCreated={({ gl }) => { gl.setClearColor(0x000000, 0); }}
+            >
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[5, 5, 5]} intensity={3} />
+              <directionalLight position={[-3, 2, 4]} intensity={1} />
+              <pointLight position={[0, 0, 4]} intensity={0.5} />
+              <CardBody rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} hovered={hovered} />
+            </Canvas>
+          </CanvasErrorBoundary>
+          {textOverlay}
+          {showPrice && card.forSale && (
+            <div style={{
+              position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
+              background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", borderRadius: 6,
+              padding: "2px 10px", zIndex: 20, pointerEvents: "none",
+            }}>
+              <span style={{
+                color: "#4ade80", fontSize: 14, fontWeight: 900,
+                fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
+              }}>
+                N${card.price?.toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
       ) : (
         <div style={{
           width: "100%", height: "100%", borderRadius: 14,
@@ -427,8 +449,8 @@ export default function Card3D({
         }}>
           <div style={{
             position: "absolute", inset: 3, borderRadius: 11,
-            border: "1px solid rgba(255,255,255,0.08)",
-            pointerEvents: "none", zIndex: 2,
+            border: "1px solid rgba(255,255,255,0.12)",
+            pointerEvents: "none", zIndex: 5,
           }} />
 
           <div style={{
@@ -439,9 +461,8 @@ export default function Card3D({
 
           <div style={{
             position: "absolute", inset: 0, borderRadius: 14,
-            background: `linear-gradient(${135 + rotY * 2}deg, rgba(255,255,255,0.12) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.06) 100%)`,
-            pointerEvents: "none", zIndex: 1,
-            transition: hovered ? "none" : "background 0.4s ease-out",
+            background: `linear-gradient(${135 + rotY * 3}deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, rgba(255,255,255,0.03) 75%, rgba(255,255,255,0.12) 100%)`,
+            pointerEvents: "none", zIndex: 3,
           }} />
 
           <div style={{
@@ -457,26 +478,26 @@ export default function Card3D({
 
           <div style={{
             position: "absolute", inset: 0, borderRadius: 14,
-            background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)",
-            pointerEvents: "none",
+            background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%)",
+            pointerEvents: "none", zIndex: 1,
           }} />
-        </div>
-      )}
 
-      {textOverlay}
+          {textOverlay}
 
-      {showPrice && card.forSale && (
-        <div style={{
-          position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-          background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", borderRadius: 6,
-          padding: "2px 10px", zIndex: 20, pointerEvents: "none",
-        }}>
-          <span style={{
-            color: "#4ade80", fontSize: 14, fontWeight: 900,
-            fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
-          }}>
-            N${card.price?.toFixed(2)}
-          </span>
+          {showPrice && card.forSale && (
+            <div style={{
+              position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
+              background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", borderRadius: 6,
+              padding: "2px 10px", zIndex: 20, pointerEvents: "none",
+            }}>
+              <span style={{
+                color: "#4ade80", fontSize: 14, fontWeight: 900,
+                fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
+              }}>
+                N${card.price?.toFixed(2)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

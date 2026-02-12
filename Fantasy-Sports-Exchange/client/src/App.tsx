@@ -17,6 +17,7 @@ import CollectionPage from "@/pages/collection";
 import MarketplacePage from "@/pages/marketplace";
 import WalletPage from "@/pages/wallet";
 import CompetitionsPage from "@/pages/competitions";
+import PremierLeaguePage from "@/pages/premier-league";
 
 function AuthenticatedRouter() {
   const { data: onboarding, isLoading } = useQuery<{
@@ -41,6 +42,7 @@ function AuthenticatedRouter() {
     <Switch>
       <Route path="/" component={DashboardPage} />
       <Route path="/competitions" component={CompetitionsPage} />
+      <Route path="/premier-league" component={PremierLeaguePage} />
       <Route path="/collection" component={CollectionPage} />
       <Route path="/marketplace" component={MarketplacePage} />
       <Route path="/wallet" component={WalletPage} />

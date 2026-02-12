@@ -35,6 +35,7 @@ A Sorare-inspired fantasy football platform without blockchain. Users deposit di
 - **Database**: PostgreSQL with Drizzle ORM
 - **Key Routes**:
   - `/` - Landing page (logged out) or Dashboard (logged in)
+  - `/premier-league` - Live EPL tracker (standings, fixtures, players, injuries)
   - `/competitions` - Weekly competitions with tier tabs, lineup builder
   - `/collection` - View and manage owned cards
   - `/marketplace` - Buy/sell/swap rare+ cards with fee transparency
@@ -46,10 +47,21 @@ A Sorare-inspired fantasy football platform without blockchain. Users deposit di
 - **Lineup rules**: 1 GK + 1 DEF + 1 MID + 1 FWD + 1 Utility = 5 cards
 - **Cards cannot be in lineup AND listed for sale simultaneously**
 
+## EPL Integration (API-Football)
+- **API**: API-Football v3 (api-sports.io) via `API_FOOTBALL_KEY` secret
+- **Service**: `server/services/apiFootball.ts` handles fetching and caching
+- **Cache Strategy**: TTL-based (standings 6h, fixtures 4h, injuries 6h, players 12h)
+- **Rate Limit**: 100 requests/day on free tier, managed via sync log table
+- **Sync**: Auto-syncs on server startup, manual sync via "Refresh Data" button
+- **EPL Tables**: `epl_players`, `epl_fixtures`, `epl_injuries`, `epl_standings`, `epl_sync_log`
+- **Premier League ID**: 39, Season: 2024
+
 ## Key Files
-- `shared/schema.ts` - All data models (players, cards, wallets, transactions, lineups, onboarding)
-- `server/routes.ts` - All API endpoints
+- `shared/schema.ts` - All data models (players, cards, wallets, transactions, lineups, onboarding, EPL)
+- `server/routes.ts` - All API endpoints including EPL data
+- `server/services/apiFootball.ts` - API-Football integration with caching
 - `server/storage.ts` - Database storage layer
 - `server/seed.ts` - 27 real football players seed data
+- `client/src/pages/premier-league.tsx` - EPL tracker page with 4 tabs
 - `client/src/components/PlayerCard.tsx` - Reusable card component with rarity styling
 - `client/src/pages/` - All page components

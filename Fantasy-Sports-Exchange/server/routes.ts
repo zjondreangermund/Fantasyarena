@@ -5,6 +5,10 @@ import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integra
 import { seedDatabase, seedCompetitions } from "./seed";
 import { z } from "zod";
 import { SITE_FEE_RATE } from "@shared/schema";
+import {
+  initialSync, syncStandings, syncFixtures, syncTopPlayers, syncInjuries,
+  getEplPlayers, getEplFixtures, getEplInjuries, getEplStandings,
+} from "./services/apiFootball";
 
 function randomScores(): number[] {
   return Array.from({ length: 5 }, () => Math.floor(Math.random() * 80) + 10);
@@ -683,6 +687,71 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting swap offers for card:", error);
       res.status(500).json({ message: "Failed to get swap offers" });
+    }
+  });
+
+  initialSync().catch(err => console.error("Initial EPL sync error:", err));
+
+  app.get("/api/epl/standings", isAuthenticated, async (req: any, res) => {
+    try {
+      const standings = await getEplStandings();
+      res.json(standings);
+    } catch (error) {
+      console.error("Error getting EPL standings:", error);
+      res.status(500).json({ message: "Failed to get standings" });
+    }
+  });
+
+  app.get("/api/epl/fixtures", isAuthenticated, async (req: any, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const fixtures = await getEplFixtures(status);
+      res.json(fixtures);
+    } catch (error) {
+      console.error("Error getting EPL fixtures:", error);
+      res.status(500).json({ message: "Failed to get fixtures" });
+    }
+  });
+
+  app.get("/api/epl/players", isAuthenticated, async (req: any, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const search = req.query.search as string | undefined;
+      const position = req.query.position as string | undefined;
+      const players = await getEplPlayers(page, limit, search, position);
+      res.json(players);
+    } catch (error) {
+      console.error("Error getting EPL players:", error);
+      res.status(500).json({ message: "Failed to get players" });
+    }
+  });
+
+  app.get("/api/epl/injuries", isAuthenticated, async (req: any, res) => {
+    try {
+      const injuries = await getEplInjuries();
+      res.json(injuries);
+    } catch (error) {
+      console.error("Error getting EPL injuries:", error);
+      res.status(500).json({ message: "Failed to get injuries" });
+    }
+  });
+
+  app.post("/api/epl/sync", isAuthenticated, async (req: any, res) => {
+    try {
+      const type = req.body.type || "all";
+      let synced = false;
+      if (type === "standings" || type === "all") synced = await syncStandings() || synced;
+      if (type === "fixtures" || type === "all") synced = await syncFixtures() || synced;
+      if (type === "players" || type === "all") {
+        synced = await syncTopPlayers(1) || synced;
+        synced = await syncTopPlayers(2) || synced;
+      }
+      if (type === "injuries" || type === "all") synced = await syncInjuries() || synced;
+      res.json({ synced, message: synced ? "Data synced successfully" : "Data is up to date (cached)" });
+    } catch (error) {
+      console.error("Error syncing EPL data:", error);
+      res.status(500).json({ message: "Failed to sync data" });
     }
   });
 

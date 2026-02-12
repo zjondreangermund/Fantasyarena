@@ -108,6 +108,95 @@ export const swapOffers = pgTable("swap_offers", {
 
 export const SITE_FEE_RATE = 0.08;
 
+export const eplPlayers = pgTable("epl_players", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  apiId: integer("api_id").notNull().unique(),
+  name: text("name").notNull(),
+  firstname: text("firstname"),
+  lastname: text("lastname"),
+  age: integer("age"),
+  nationality: text("nationality"),
+  photo: text("photo"),
+  team: text("team"),
+  teamLogo: text("team_logo"),
+  teamId: integer("team_id"),
+  position: text("epl_position"),
+  number: integer("number"),
+  goals: integer("goals").default(0),
+  assists: integer("assists").default(0),
+  yellowCards: integer("yellow_cards").default(0),
+  redCards: integer("red_cards").default(0),
+  appearances: integer("appearances").default(0),
+  minutes: integer("minutes").default(0),
+  rating: text("rating"),
+  injured: boolean("injured").default(false),
+  season: integer("season").notNull().default(2024),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+export const eplFixtures = pgTable("epl_fixtures", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  apiId: integer("api_id").notNull().unique(),
+  homeTeam: text("home_team").notNull(),
+  homeTeamLogo: text("home_team_logo"),
+  homeTeamId: integer("home_team_id"),
+  awayTeam: text("away_team").notNull(),
+  awayTeamLogo: text("away_team_logo"),
+  awayTeamId: integer("away_team_id"),
+  homeGoals: integer("home_goals"),
+  awayGoals: integer("away_goals"),
+  status: text("fixture_status").notNull().default("NS"),
+  statusLong: text("status_long").default("Not Started"),
+  elapsed: integer("elapsed"),
+  venue: text("venue"),
+  referee: text("referee"),
+  round: text("round"),
+  matchDate: timestamp("match_date").notNull(),
+  season: integer("season").notNull().default(2024),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+export const eplInjuries = pgTable("epl_injuries", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  playerApiId: integer("player_api_id").notNull(),
+  playerName: text("player_name").notNull(),
+  playerPhoto: text("player_photo"),
+  team: text("team").notNull(),
+  teamLogo: text("team_logo"),
+  type: text("injury_type"),
+  reason: text("reason"),
+  fixtureApiId: integer("fixture_api_id"),
+  fixtureDate: timestamp("fixture_date"),
+  season: integer("season").notNull().default(2024),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+export const eplStandings = pgTable("epl_standings", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  teamId: integer("team_id").notNull().unique(),
+  teamName: text("team_name").notNull(),
+  teamLogo: text("team_logo"),
+  rank: integer("rank").notNull(),
+  points: integer("points").notNull().default(0),
+  played: integer("played").notNull().default(0),
+  won: integer("won").notNull().default(0),
+  drawn: integer("drawn").notNull().default(0),
+  lost: integer("lost").notNull().default(0),
+  goalsFor: integer("goals_for").notNull().default(0),
+  goalsAgainst: integer("goals_against").notNull().default(0),
+  goalDiff: integer("goal_diff").notNull().default(0),
+  form: text("form"),
+  season: integer("season").notNull().default(2024),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+export const eplSyncLog = pgTable("epl_sync_log", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  endpoint: text("endpoint").notNull(),
+  syncedAt: timestamp("synced_at").defaultNow(),
+  recordCount: integer("record_count").default(0),
+});
+
 export const playersRelations = relations(players, ({ many }) => ({
   cards: many(playerCards),
 }));
@@ -177,3 +266,8 @@ export type InsertSwapOffer = z.infer<typeof insertSwapOfferSchema>;
 
 export type PlayerCardWithPlayer = PlayerCard & { player: Player };
 export type CompetitionWithEntries = Competition & { entries: CompetitionEntry[]; entryCount: number };
+
+export type EplPlayer = typeof eplPlayers.$inferSelect;
+export type EplFixture = typeof eplFixtures.$inferSelect;
+export type EplInjury = typeof eplInjuries.$inferSelect;
+export type EplStanding = typeof eplStandings.$inferSelect;

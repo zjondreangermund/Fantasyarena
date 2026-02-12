@@ -28,6 +28,7 @@ Preferred communication style: Simple, everyday language.
 | Route | Purpose |
 |---|---|
 | `/` | Landing page (unauthenticated) or Dashboard (authenticated) |
+| `/premier-league` | Live EPL tracker (standings, fixtures, players, injuries) |
 | `/competitions` | Weekly competitions with Common (free) and Rare (N$20) tiers |
 | `/collection` | View and manage owned cards, edit lineup |
 | `/marketplace` | Buy/sell/swap rare+ cards with fee transparency |
@@ -44,7 +45,8 @@ Preferred communication style: Simple, everyday language.
 **Key Backend Files**:
 | File | Purpose |
 |---|---|
-| `server/routes.ts` | All API route handlers (cards, wallet, marketplace, competitions, swaps) |
+| `server/routes.ts` | All API route handlers (cards, wallet, marketplace, competitions, swaps, EPL) |
+| `server/services/apiFootball.ts` | API-Football integration with caching and rate-limit-aware sync |
 | `server/storage.ts` | Database access layer (IStorage interface + Drizzle implementation) |
 | `server/seed.ts` | Seeds player data, marketplace cards, and competitions |
 | `server/db.ts` | PostgreSQL connection pool and Drizzle ORM instance |

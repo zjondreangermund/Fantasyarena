@@ -16,12 +16,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type EplPlayer, type EplFixture, type EplInjury, type EplStanding } from "@shared/schema";
-import EPLPlayerCard, { assignRarity, type CardRarity } from "@/components/EPLPlayerCard";
+import PlayerCard from "@/components/PlayerCard";
+import { eplPlayerToCard } from "@/components/Card3D";
 import {
   Trophy, Calendar, Users, AlertTriangle, Search, RefreshCw,
   Clock, CheckCircle, Activity,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type CardRarity = "common" | "rare" | "unique" | "epic" | "legendary";
+
+function assignRarity(player: EplPlayer): CardRarity {
+  const rating = player.rating ? parseFloat(player.rating) : 0;
+  const goals = player.goals ?? 0;
+  const assists = player.assists ?? 0;
+  const apps = player.appearances ?? 0;
+  if (rating >= 7.5 || goals >= 15) return "legendary";
+  if (rating >= 7.2 || goals >= 10 || (goals + assists) >= 15) return "epic";
+  if (rating >= 7.0 || goals >= 5 || assists >= 8) return "unique";
+  if (rating >= 6.8 || apps >= 15 || (goals + assists) >= 5) return "rare";
+  return "common";
+}
 
 export default function PremierLeaguePage() {
   const { toast } = useToast();
@@ -192,9 +207,9 @@ export default function PremierLeaguePage() {
               ) : filteredPlayers.length > 0 ? (
                 <div className="flex flex-wrap gap-8 justify-center sm:justify-start">
                   {filteredPlayers.map((player) => (
-                    <EPLPlayerCard
+                    <PlayerCard
                       key={player.id}
-                      player={player}
+                      card={eplPlayerToCard(player)}
                       size="md"
                     />
                   ))}

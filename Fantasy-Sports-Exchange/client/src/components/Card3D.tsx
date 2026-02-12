@@ -2,7 +2,7 @@ import { Text, useTexture } from "@react-three/drei";
 import { useRef, useState, useMemo, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { type PlayerCardWithPlayer } from "@shared/schema";
+import { type PlayerCardWithPlayer, type EplPlayer } from "@shared/schema";
 import { Zap, Shield } from "lucide-react";
 
 type RarityKey = "common" | "rare" | "unique" | "epic" | "legendary";
@@ -174,10 +174,12 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: 
     });
   }, []);
 
+  const baseTiltX = -5 * (Math.PI / 180);
+
   useFrame(() => {
     if (cardRef.current && mouse.current) {
       cardRef.current.rotation.y = mouse.current.x * 0.4;
-      cardRef.current.rotation.x = -mouse.current.y * 0.4;
+      cardRef.current.rotation.x = baseTiltX + (-mouse.current.y * 0.4);
     }
 
     if (imageRef.current) {
@@ -197,7 +199,7 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: 
   return (
     <group ref={cardRef}>
       <mesh geometry={geometry} scale={[1.02, 1.02, 1.02]}>
-        <meshStandardMaterial color="#111111" metalness={0.6} roughness={0.3} />
+        <meshStandardMaterial color={new THREE.Color(colors.base).multiplyScalar(0.4)} metalness={0.6} roughness={0.3} />
       </mesh>
 
       <mesh geometry={geometry} material={baseMaterial} />
@@ -226,6 +228,60 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: 
       </mesh>
     </group>
   );
+}
+
+function eplAssignRarity(player: EplPlayer): RarityKey {
+  const rating = player.rating ? parseFloat(player.rating) : 0;
+  const goals = player.goals ?? 0;
+  const assists = player.assists ?? 0;
+  const apps = player.appearances ?? 0;
+  if (rating >= 7.5 || goals >= 15) return "legendary";
+  if (rating >= 7.2 || goals >= 10 || (goals + assists) >= 15) return "epic";
+  if (rating >= 7.0 || goals >= 5 || assists >= 8) return "unique";
+  if (rating >= 6.8 || apps >= 15 || (goals + assists) >= 5) return "rare";
+  return "common";
+}
+
+function eplPositionShort(pos: string | null): string {
+  if (!pos) return "N/A";
+  const map: Record<string, string> = { Goalkeeper: "GK", Defender: "DEF", Midfielder: "MID", Attacker: "FWD" };
+  return map[pos] || pos.substring(0, 3).toUpperCase();
+}
+
+export function eplPlayerToCard(player: EplPlayer): PlayerCardWithPlayer {
+  const rarity = eplAssignRarity(player);
+  const goals = player.goals ?? 0;
+  const assists = player.assists ?? 0;
+  const apps = player.appearances ?? 0;
+  const rating = player.rating ? parseFloat(player.rating) : 0;
+  const overall = Math.min(99, Math.round(60 + rating * 3 + goals * 0.5 + assists * 0.3));
+  return {
+    id: player.id,
+    playerId: player.id,
+    ownerId: null,
+    rarity,
+    serialId: null,
+    serialNumber: null,
+    maxSupply: rarity === "common" ? 0 : rarity === "rare" ? 100 : rarity === "unique" ? 1 : rarity === "epic" ? 10 : 5,
+    level: 1,
+    xp: 0,
+    decisiveScore: 35,
+    last5Scores: [0, 0, 0, 0, 0],
+    forSale: false,
+    price: 0,
+    acquiredAt: new Date(),
+    player: {
+      id: player.id,
+      name: player.name,
+      team: player.team || "Unknown",
+      league: "Premier League",
+      position: eplPositionShort(player.position),
+      nationality: player.nationality || "Unknown",
+      age: player.age || 0,
+      overall,
+      imageUrl: player.photo || "/images/player-1.png",
+    },
+  } as PlayerCardWithPlayer;
 }
 
 interface Card3DProps {

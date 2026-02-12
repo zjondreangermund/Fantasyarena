@@ -53,7 +53,7 @@ export default function LandingPage() {
             </div>
             <div className="mt-6 flex items-center gap-4 text-white/50 text-sm">
               <span className="flex items-center gap-1">
-                <Star className="w-4 h-4" /> 3 Free Packs on Signup
+                <Star className="w-4 h-4" /> 5 Free Packs on Signup
               </span>
               <span className="flex items-center gap-1">
                 <Shield className="w-4 h-4" /> No Blockchain Required

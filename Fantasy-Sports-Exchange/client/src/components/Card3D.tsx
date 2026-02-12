@@ -420,15 +420,28 @@ export default function Card3D({
         <div style={{
           width: "100%", height: "100%", borderRadius: 14,
           background: style.gradient, overflow: "hidden",
-          boxShadow: style.glow,
+          boxShadow: `${style.glow}, inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.3)`,
           transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
           transformStyle: "preserve-3d",
           transition: hovered ? "none" : "transform 0.4s ease-out",
         }}>
           <div style={{
+            position: "absolute", inset: 3, borderRadius: 11,
+            border: "1px solid rgba(255,255,255,0.08)",
+            pointerEvents: "none", zIndex: 2,
+          }} />
+
+          <div style={{
             position: "absolute", inset: 0, borderRadius: 14,
             backgroundImage: voronoiBg, backgroundSize: "cover",
             mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none",
+          }} />
+
+          <div style={{
+            position: "absolute", inset: 0, borderRadius: 14,
+            background: `linear-gradient(${135 + rotY * 2}deg, rgba(255,255,255,0.12) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.06) 100%)`,
+            pointerEvents: "none", zIndex: 1,
+            transition: hovered ? "none" : "background 0.4s ease-out",
           }} />
 
           <div style={{
@@ -444,7 +457,7 @@ export default function Card3D({
 
           <div style={{
             position: "absolute", inset: 0, borderRadius: 14,
-            background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)",
+            background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)",
             pointerEvents: "none",
           }} />
         </div>

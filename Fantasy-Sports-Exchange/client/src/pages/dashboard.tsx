@@ -191,7 +191,7 @@ export default function DashboardPage() {
               </div>
               <h3 className="font-semibold text-foreground mb-1.5">1. Open Starter Packs</h3>
               <p className="text-sm text-muted-foreground">
-                Sign up and receive 3 free packs with 9 common players. Pick your best 5 to form your starting lineup. You also get a N$100 welcome bonus to start trading.
+                Sign up and receive 5 position-based packs (GK, DEF, MID, FWD, Wildcards) with 15 common players total. Pick 1 from each pack to form your starting lineup of 5.
               </p>
             </Card>
 

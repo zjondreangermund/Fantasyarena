@@ -1,5 +1,5 @@
 import { Text, useTexture } from "@react-three/drei";
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { type PlayerCardWithPlayer } from "@shared/schema";
@@ -77,10 +77,9 @@ function ScoreBar({ scores }: { scores: number[] }) {
   );
 }
 
-function CardMesh({ rarity, mouse, playerImageUrl, rating }: { rarity: RarityKey; mouse: React.RefObject<{x: number; y: number}>; playerImageUrl: string; rating: number }) {
+function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: RarityKey; mouse: React.RefObject<{x: number; y: number}>; playerImageUrl: string; rating: number; hovered: boolean }) {
   const cardRef = useRef<THREE.Group>(null);
-  const holoRef = useRef<THREE.Mesh>(null);
-  const holoMatRef = useRef<THREE.ShaderMaterial>(null);
+  const imageRef = useRef<THREE.Mesh>(null);
 
   const colors = rarityColors[rarity];
   const playerTexture = useTexture(playerImageUrl);
@@ -120,11 +119,8 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating }: { rarity: RarityKey
     });
   }, [colors.base]);
 
-  const holoMaterial = useMemo(() => {
+  const crystalMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-      },
       transparent: true,
       depthWrite: false,
       polygonOffset: true,
@@ -137,41 +133,76 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating }: { rarity: RarityKey
         }
       `,
       fragmentShader: `
-        uniform float time;
         varying vec2 vUv;
-        float noise(vec2 p){
-          return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
         }
+
+        vec2 voronoi(vec2 x) {
+          vec2 p = floor(x);
+          vec2 f = fract(x);
+          float res = 8.0;
+          float id = 0.0;
+          for(int j = -1; j <= 1; j++) {
+            for(int i = -1; i <= 1; i++) {
+              vec2 b = vec2(float(i), float(j));
+              vec2 r = b - f + hash(p + b);
+              float d = dot(r, r);
+              if(d < res) {
+                res = d;
+                id = hash(p + b);
+              }
+            }
+          }
+          return vec2(sqrt(res), id);
+        }
+
         void main(){
-          float sweep = smoothstep(0.2, 0.8, sin(vUv.x * 8.0 + time * 3.0));
-          vec3 rainbow = vec3(
-            sin(time + vUv.x * 4.0) * 0.5 + 0.5,
-            sin(time + vUv.y * 4.0 + 2.0) * 0.5 + 0.5,
-            sin(time + vUv.x * 4.0 + 4.0) * 0.5 + 0.5
-          );
-          float grain = noise(vUv * 300.0) * 0.08;
-          gl_FragColor = vec4(rainbow * sweep + grain, 0.28);
+          vec2 v = voronoi(vUv * 12.0);
+          float facet = v.y * 0.3 + 0.7;
+          float edge = smoothstep(0.02, 0.06, v.x);
+          float edgeFade = smoothstep(0.0, 0.08, vUv.x) *
+                           smoothstep(0.0, 0.08, vUv.y) *
+                           smoothstep(1.0, 0.92, vUv.x) *
+                           smoothstep(1.0, 0.92, vUv.y);
+          vec3 color = vec3(facet * edge);
+          color *= edgeFade;
+          gl_FragColor = vec4(color, 0.22 * edgeFade);
         }
       `,
     });
   }, []);
 
-  useFrame((state, delta) => {
-    if (holoMatRef.current) {
-      holoMatRef.current.uniforms.time.value += delta;
-    }
-
+  useFrame(() => {
     if (cardRef.current && mouse.current) {
       cardRef.current.rotation.y = mouse.current.x * 0.4;
       cardRef.current.rotation.x = -mouse.current.y * 0.4;
+    }
+
+    if (imageRef.current) {
+      imageRef.current.position.x = THREE.MathUtils.lerp(
+        imageRef.current.position.x,
+        hovered ? 0.03 : 0,
+        0.1
+      );
+      imageRef.current.position.y = THREE.MathUtils.lerp(
+        imageRef.current.position.y,
+        hovered ? 0.02 : 0,
+        0.1
+      );
     }
   });
 
   return (
     <group ref={cardRef}>
+      <mesh geometry={geometry} scale={[1.02, 1.02, 1.02]}>
+        <meshStandardMaterial color="#111111" metalness={0.6} roughness={0.3} />
+      </mesh>
+
       <mesh geometry={geometry} material={baseMaterial} />
 
-      <mesh position={[0, 0, 0.08]}>
+      <mesh ref={imageRef} position={[0, 0, 0.08]}>
         <planeGeometry args={[1.8, 2.6]} />
         <meshStandardMaterial map={playerTexture} transparent />
       </mesh>
@@ -190,8 +221,8 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating }: { rarity: RarityKey
         {rating.toString()}
       </Text>
 
-      <mesh ref={holoRef} geometry={geometry} renderOrder={1}>
-        <primitive object={holoMaterial} ref={holoMatRef} attach="material" />
+      <mesh geometry={geometry} renderOrder={1}>
+        <primitive object={crystalMaterial} attach="material" />
       </mesh>
     </group>
   );
@@ -216,6 +247,7 @@ export default function Card3D({
 }: Card3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
 
   const rarity = (card.rarity as RarityKey) || "common";
   const colors = rarityColors[rarity];
@@ -258,7 +290,8 @@ export default function Card3D({
       }}
       onClick={onClick}
       onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={(e) => { handleMouseLeave(); setHovered(false); }}
       data-testid={`player-card-${card.id}`}
     >
       <Canvas
@@ -275,7 +308,7 @@ export default function Card3D({
         <directionalLight position={[5, 5, 5]} intensity={3} />
         <directionalLight position={[-3, 2, 4]} intensity={1} />
         <pointLight position={[0, 0, 4]} intensity={0.5} />
-        <CardMesh rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} rating={card.player?.overall || 0} />
+        <CardMesh rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} rating={card.player?.overall || 0} hovered={hovered} />
       </Canvas>
 
       <div

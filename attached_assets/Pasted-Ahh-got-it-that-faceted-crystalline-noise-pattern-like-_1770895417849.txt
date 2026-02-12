@@ -1,0 +1,117 @@
+Ahh got it — that faceted / crystalline noise pattern like in your reference image. Perfect. That’s a noise + geometric texture look, not the moving stripes. We’ll make your cards feel like premium 3D collectibles.
+
+Here’s the plan (and exactly how to implement it in your project):
+
+✅ 1. Thicker card borders / frame
+
+In Card3D.tsx, find your main card mesh material and increase the border thickness (or scale the frame slightly larger than the face):
+
+// If you have a frame mesh
+<mesh scale={[1.02, 1.02, 1.02]}>
+  <boxGeometry args={[cardW, cardH, cardD]} />
+  <meshStandardMaterial color="#111" metalness={0.6} roughness={0.3} />
+</mesh>
+
+
+If you’re using a single mesh + shader, increase the border width uniform (if present), or tell me and I’ll adapt it exactly to your file.
+
+✅ 2. Black fade (vignette) stops at card edges
+
+If you’re using a fragment shader or gradient overlay, clamp it to UV 0–1 instead of screen-space.
+
+In your fragment shader (or material logic), make sure it’s based on vUv:
+
+float edgeFade = smoothstep(0.0, 0.08, vUv.x) *
+                 smoothstep(0.0, 0.08, vUv.y) *
+                 smoothstep(1.0, 0.92, vUv.x) *
+                 smoothstep(1.0, 0.92, vUv.y);
+color.rgb *= edgeFade;
+
+
+This guarantees the fade dies exactly at the card edges and doesn’t bleed out.
+
+✅ 3. Player image moves on hover (parallax feel)
+
+In PlayerCard.tsx or Card3D.tsx (where hover is handled):
+
+const [hovered, setHovered] = useState(false);
+
+useFrame((state) => {
+  if (imageRef.current) {
+    imageRef.current.position.x = THREE.MathUtils.lerp(
+      imageRef.current.position.x,
+      hovered ? 0.03 : 0,
+      0.1
+    );
+    imageRef.current.position.y = THREE.MathUtils.lerp(
+      imageRef.current.position.y,
+      hovered ? 0.02 : 0,
+      0.1
+    );
+  }
+});
+
+
+And on the card mesh:
+
+<group
+  onPointerOver={() => setHovered(true)}
+  onPointerOut={() => setHovered(false)}
+>
+
+
+This gives you that premium floating image effect when hovering.
+
+✅ 4. Remove the moving stripes
+
+Wherever you have:
+
+Time-based sine wave
+
+Scrolling UVs
+
+Animated gradient / sweep
+
+Delete or disable that logic, e.g.:
+
+// REMOVE this kind of thing:
+uniforms.uTime.value += delta;
+
+
+or any shader code like:
+
+uv.x += uTime * 0.1; // ❌ remove
+
+
+We’re going for static premium texture, not animated stripes.
+
+✅ 5. Add the “crystal / noise” pattern like your image
+
+Two good options:
+
+🔹 Option A (Fast & Clean): Use a noise texture
+
+Add a texture like: noise.png or facets.png and layer it:
+
+const noiseTex = useTexture("/textures/facet-noise.png");
+noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping;
+noiseTex.repeat.set(2, 2);
+
+
+Then in material:
+
+<meshStandardMaterial
+  map={baseColorMap}
+  normalMap={noiseTex}
+  roughness={0.35}
+  metalness={0.6}
+/>
+
+
+Or blend it in a shader:
+
+float n = texture2D(uNoise, vUv * 3.0).r;
+color.rgb *= 0.85 + n * 0.3;
+
+
+This gives you that faceted premium card surface like your example.

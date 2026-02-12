@@ -249,29 +249,29 @@ export default function EPLPlayerCard({
           transform: "rotateY(-5deg)",
         }}
       >
-        {/* RIGHT EDGE */}
+        {/* RIGHT EDGE — flush with card face */}
         <div style={{
           position: "absolute",
-          top: 4,
+          top: 0,
           right: 0,
           width: s.edge,
-          height: s.h - 8,
+          height: s.h,
           background: `linear-gradient(180deg, ${theme.edgeMid} 0%, ${theme.edgeDark} 40%, ${theme.edgeDark} 100%)`,
-          borderRadius: `0 ${s.radius - 2}px ${s.radius - 2}px 0`,
+          borderRadius: `0 ${s.radius}px ${s.radius}px 0`,
           transform: `translateZ(-${s.edge}px)`,
           boxShadow: `inset -2px 0 6px rgba(0,0,0,0.4), inset 1px 0 2px rgba(255,255,255,0.05)`,
           zIndex: 0,
         }} />
 
-        {/* BOTTOM EDGE */}
+        {/* BOTTOM EDGE — flush with card face */}
         <div style={{
           position: "absolute",
           bottom: 0,
-          left: 4,
-          right: 4,
+          left: 0,
+          right: 0,
           height: s.edge,
           background: `linear-gradient(90deg, ${theme.edgeDark} 0%, ${theme.edgeMid} 30%, ${theme.edgeDark} 100%)`,
-          borderRadius: `0 0 ${s.radius - 2}px ${s.radius - 2}px`,
+          borderRadius: `0 0 ${s.radius}px ${s.radius}px`,
           transform: `translateZ(-${s.edge}px)`,
           boxShadow: `inset 0 -2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.05)`,
           zIndex: 0,
@@ -286,20 +286,23 @@ export default function EPLPlayerCard({
           height: s.h,
           borderRadius: s.radius,
           background: theme.face,
-          border: `2px solid ${theme.border}`,
-          borderRight: `${s.edge}px solid ${theme.edgeMid}`,
-          borderBottom: `${s.edge}px solid ${theme.edgeDark}`,
           boxShadow: `
             ${theme.glow},
-            inset 0 0 0 1px ${theme.rimColor},
-            inset 0 1px 0 rgba(255,255,255,0.35),
-            inset 0 -1px 0 rgba(0,0,0,0.3),
-            inset 1px 0 0 ${theme.rimColor},
-            inset -1px 0 0 ${theme.rimColor}
+            inset 0px 1px 1px rgba(255,255,255,0.4),
+            inset 0px -1px 1px rgba(0,0,0,0.4)
           `,
           overflow: "hidden",
           zIndex: 2,
         }}>
+          {/* BRUSHED METAL REFLECTIVE FINISH */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }} />
+
           {/* BRUSHED METAL NOISE TEXTURE */}
           <div style={{
             position: "absolute",
@@ -480,7 +483,6 @@ export default function EPLPlayerCard({
             borderRadius: 10 * s.fontSize,
             overflow: "hidden",
             background: theme.windowBg,
-            border: `2px solid ${theme.windowBorder}`,
             boxShadow: `
               inset 0 0 20px rgba(0,0,0,0.7),
               inset 0 6px 20px rgba(0,0,0,0.6),

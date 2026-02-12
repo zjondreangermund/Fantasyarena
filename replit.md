@@ -86,13 +86,22 @@ Preferred communication style: Simple, everyday language.
 - **Escrow/Locked Balance**: Wallets have `lockedBalance` field for funds in transit (pending withdrawals, marketplace listings)
 - **Payment Methods**: Supports EFT, eWallet, Bank Transfer, Mobile Money with external transaction ID tracking
 - **Withdrawal Flow**: User requests withdrawal → funds locked (moved from balance to lockedBalance) → admin reviews → approve (deduct locked) or reject (return to balance)
-- **Card Serial IDs**: Immutable serial numbers (e.g., "HAA-001") using player name initials + incremental counter per player
+- **Card Serial IDs**: Immutable serial numbers (e.g., "HAA-001") using player name initials + incremental counter per player, visible as #001/100 on card face
 - **Admin Dashboard**: Available at `/admin` for reviewing and approving/rejecting pending withdrawals with bank details (IBAN/SWIFT) visibility
 - **Withdrawal Requests Table**: Stores bank details, eWallet info, status workflow (pending → processing → completed/rejected), admin notes
 
 **New Tables**: `withdrawal_requests`
 **New Enums**: `withdrawal_status`, `payment_method`
-**Updated Tables**: `wallets` (added `locked_balance`), `player_cards` (added `serial_id` unique), `transactions` (added `payment_method`, `external_transaction_id`)
+**Updated Tables**: `wallets` (added `locked_balance`), `player_cards` (added `serial_id`, `serial_number`, `max_supply`, `decisive_score`), `transactions` (added `payment_method`, `external_transaction_id`)
+
+### Card Mechanics (Sorare-Style, Added Feb 2026)
+- **Fixed Supply**: Each player limited per rarity tier per season — Common: unlimited, Rare: 100, Unique: 1, Epic: 10, Legendary: 5
+- **Supply Enforcement**: Server checks supply count before creating non-common cards; blocks creation when cap reached
+- **Serial Numbers**: Every card displays #001/100 (serialNumber/maxSupply) etched into the metal corner
+- **Metallic Card Design**: Cards use inset box-shadow for metallic bevel (no CSS borders), brushed metal gradient overlay, unified slab edges flush with card face
+- **Decisive Score System**: Level 0 (35pts) → Level 5 (100pts) based on major actions (goals, assists, clean sheets = +1 level; red cards, own goals = -1 level)
+- **XP & Leveling**: Cards gain XP from player performance; level badge visible on card face; decisive score displayed as color-coded badge
+- **Card Visual Style**: No double borders, metallic rim light via inset shadows, reflective steel finish via linear gradient, crystal pattern overlay
 
 ### Build System
 - **Development**: `npm run dev` runs tsx with Vite dev server middleware (HMR enabled)

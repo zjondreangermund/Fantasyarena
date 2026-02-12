@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { seedDatabase, seedCompetitions } from "./seed";
 import { z } from "zod";
-import { SITE_FEE_RATE } from "@shared/schema";
+import { SITE_FEE_RATE, RARITY_SUPPLY, calculateDecisiveLevel } from "@shared/schema";
 import {
   initialSync, syncStandings, syncFixtures, syncTopPlayers, syncInjuries,
   getEplPlayers, getEplFixtures, getEplInjuries, getEplStandings,
@@ -257,12 +257,14 @@ export async function registerRoutes(
 
         for (let i = 0; i < randomPlayers.length; i++) {
           const packIdx = Math.floor(i / 3);
-          const serialId = await storage.generateSerialId(randomPlayers[i].id, randomPlayers[i].name);
+          const { serialId, serialNumber, maxSupply } = await storage.generateSerialId(randomPlayers[i].id, randomPlayers[i].name, "common");
           const card = await storage.createPlayerCard({
             playerId: randomPlayers[i].id,
             ownerId: userId,
             rarity: "common",
             serialId,
+            serialNumber,
+            maxSupply,
             level: 1,
             xp: 0,
             last5Scores: randomScores(),
@@ -919,6 +921,47 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error syncing EPL data:", error);
       res.status(500).json({ message: "Failed to sync data" });
+    }
+  });
+
+  app.post("/api/cards/update-scores", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const cards = await storage.getUserCards(userId);
+      let updated = 0;
+      for (const card of cards) {
+        const player = card.player;
+        if (!player) continue;
+        const overallRating = player.overall || 50;
+        const estimatedGoals = Math.max(0, Math.floor((overallRating - 60) / 5));
+        const estimatedAssists = Math.max(0, Math.floor((overallRating - 55) / 8));
+        const isDefOrGK = player.position === "DEF" || player.position === "GK";
+        const estimatedCleanSheets = isDefOrGK ? Math.max(0, Math.floor((overallRating - 70) / 4)) : 0;
+        const { level: decisiveLevel, points } = calculateDecisiveLevel({
+          goals: estimatedGoals,
+          assists: estimatedAssists,
+          cleanSheets: estimatedCleanSheets,
+          penaltySaves: 0,
+          redCards: 0,
+          ownGoals: 0,
+          errorsLeadingToGoal: 0,
+        });
+        const xpGain = overallRating * 2 + estimatedGoals * 50 + estimatedAssists * 30;
+        const newXp = (card.xp || 0) + xpGain;
+        const newLevel = Math.max(1, Math.min(5, decisiveLevel + 1));
+        if (card.decisiveScore !== points || card.level !== newLevel) {
+          await storage.updatePlayerCard(card.id, {
+            decisiveScore: points,
+            level: newLevel,
+            xp: newXp,
+          });
+          updated++;
+        }
+      }
+      res.json({ updated, message: `Updated ${updated} cards` });
+    } catch (error) {
+      console.error("Error updating card scores:", error);
+      res.status(500).json({ message: "Failed to update scores" });
     }
   });
 

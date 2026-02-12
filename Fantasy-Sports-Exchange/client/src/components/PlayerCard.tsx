@@ -210,29 +210,29 @@ export default function PlayerCard({
           transform: "rotateY(-5deg)",
         }}
       >
-        {/* RIGHT EDGE */}
+        {/* RIGHT EDGE — flush with card face */}
         <div style={{
           position: "absolute",
-          top: 4,
+          top: 0,
           right: 0,
           width: s.edge,
-          height: s.h - 8,
+          height: s.h,
           background: `linear-gradient(180deg, ${theme.edgeMid} 0%, ${theme.edgeDark} 40%, ${theme.edgeDark} 100%)`,
-          borderRadius: `0 ${s.radius - 2}px ${s.radius - 2}px 0`,
+          borderRadius: `0 ${s.radius}px ${s.radius}px 0`,
           transform: `translateZ(-${s.edge}px)`,
           boxShadow: `inset -2px 0 6px rgba(0,0,0,0.4), inset 1px 0 2px rgba(255,255,255,0.05)`,
           zIndex: 0,
         }} />
 
-        {/* BOTTOM EDGE */}
+        {/* BOTTOM EDGE — flush with card face */}
         <div style={{
           position: "absolute",
           bottom: 0,
-          left: 4,
-          right: 4,
+          left: 0,
+          right: 0,
           height: s.edge,
           background: `linear-gradient(90deg, ${theme.edgeDark} 0%, ${theme.edgeMid} 30%, ${theme.edgeDark} 100%)`,
-          borderRadius: `0 0 ${s.radius - 2}px ${s.radius - 2}px`,
+          borderRadius: `0 0 ${s.radius}px ${s.radius}px`,
           transform: `translateZ(-${s.edge}px)`,
           boxShadow: `inset 0 -2px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.05)`,
           zIndex: 0,
@@ -247,20 +247,23 @@ export default function PlayerCard({
           height: s.h,
           borderRadius: s.radius,
           background: theme.face,
-          border: `2px solid ${theme.border}`,
-          borderRight: `${s.edge}px solid ${theme.edgeMid}`,
-          borderBottom: `${s.edge}px solid ${theme.edgeDark}`,
           boxShadow: `
             ${theme.glow},
-            inset 0 0 0 1px ${theme.rimColor},
-            inset 0 1px 0 rgba(255,255,255,0.35),
-            inset 0 -1px 0 rgba(0,0,0,0.3),
-            inset 1px 0 0 ${theme.rimColor},
-            inset -1px 0 0 ${theme.rimColor}
+            inset 0px 1px 1px rgba(255,255,255,0.4),
+            inset 0px -1px 1px rgba(0,0,0,0.4)
           `,
           overflow: "hidden",
           zIndex: 2,
         }}>
+          {/* BRUSHED METAL REFLECTIVE FINISH */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }} />
+
           {/* BRUSHED METAL NOISE TEXTURE */}
           <div style={{
             position: "absolute",
@@ -348,8 +351,7 @@ export default function PlayerCard({
             justifyContent: "center",
             background: "rgba(0,0,0,0.3)",
             borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.15)",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.4)",
+            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.08)",
           }}>
             <span style={{
               color: "rgba(255,255,255,0.6)",
@@ -360,6 +362,45 @@ export default function PlayerCard({
               {card.player?.team?.charAt(0) || "?"}
             </span>
           </div>
+
+          {/* SERIAL NUMBER — etched into metal corner */}
+          {card.serialNumber && card.maxSupply ? (
+            <div style={{
+              position: "absolute",
+              top: 6 * s.fontSize,
+              right: 6 * s.fontSize + 22 * s.fontSize,
+              zIndex: 6,
+            }}>
+              <span style={{
+                color: "rgba(255,255,255,0.25)",
+                fontWeight: 900,
+                fontSize: 7 * s.fontSize,
+                fontFamily: "'Inter', monospace",
+                letterSpacing: "0.05em",
+                textShadow: "0 1px 0 rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.05)",
+              }}>
+                #{String(card.serialNumber).padStart(3, "0")}/{card.maxSupply}
+              </span>
+            </div>
+          ) : card.serialId && (
+            <div style={{
+              position: "absolute",
+              top: 6 * s.fontSize,
+              right: 6 * s.fontSize + 22 * s.fontSize,
+              zIndex: 6,
+            }}>
+              <span style={{
+                color: "rgba(255,255,255,0.2)",
+                fontWeight: 800,
+                fontSize: 6 * s.fontSize,
+                fontFamily: "'Inter', monospace",
+                letterSpacing: "0.05em",
+                textShadow: "0 1px 0 rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.05)",
+              }}>
+                {card.serialId}
+              </span>
+            </div>
+          )}
 
           {/* STUDIO GLOW */}
           {theme.studioGlow && (
@@ -451,7 +492,6 @@ export default function PlayerCard({
             borderRadius: 10 * s.fontSize,
             overflow: "hidden",
             background: "linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5))",
-            border: `2px solid rgba(255,255,255,0.1)`,
             boxShadow: `
               inset 0 0 20px rgba(0,0,0,0.7),
               inset 0 6px 20px rgba(0,0,0,0.6),
@@ -573,6 +613,25 @@ export default function PlayerCard({
                   textShadow: "1px 1px 1px rgba(0,0,0,0.5)",
                 }}>
                   Lv.{card.level}
+                </span>
+              </div>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+                background: "rgba(0,0,0,0.3)",
+                borderRadius: 4,
+                padding: `${2 * s.fontSize}px ${5 * s.fontSize}px`,
+                boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(255,255,255,0.05)",
+              }}>
+                <span style={{
+                  color: card.decisiveScore && card.decisiveScore >= 80 ? "#4ade80" : card.decisiveScore && card.decisiveScore >= 60 ? "#facc15" : "rgba(255,255,255,0.7)",
+                  fontSize: 9 * s.fontSize,
+                  fontWeight: 900,
+                  fontFamily: "'Inter', monospace",
+                  textShadow: "1px 1px 1px rgba(0,0,0,0.5)",
+                }}>
+                  {card.decisiveScore || 35}
                 </span>
               </div>
               <ScoreBar scores={card.last5Scores as number[]} />

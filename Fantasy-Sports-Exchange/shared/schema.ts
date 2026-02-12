@@ -27,14 +27,41 @@ export const players = pgTable("players", {
   imageUrl: text("image_url"),
 });
 
+export const RARITY_SUPPLY: Record<string, number> = {
+  common: 0,
+  rare: 100,
+  unique: 1,
+  epic: 10,
+  legendary: 5,
+};
+
+export const DECISIVE_LEVELS: { level: number; points: number }[] = [
+  { level: 0, points: 35 },
+  { level: 1, points: 60 },
+  { level: 2, points: 70 },
+  { level: 3, points: 80 },
+  { level: 4, points: 90 },
+  { level: 5, points: 100 },
+];
+
+export function calculateDecisiveLevel(stats: { goals?: number; assists?: number; cleanSheets?: number; penaltySaves?: number; redCards?: number; ownGoals?: number; errorsLeadingToGoal?: number }): { level: number; points: number } {
+  const positives = (stats.goals ?? 0) + (stats.assists ?? 0) + (stats.cleanSheets ?? 0) + (stats.penaltySaves ?? 0);
+  const negatives = (stats.redCards ?? 0) + (stats.ownGoals ?? 0) + (stats.errorsLeadingToGoal ?? 0);
+  const rawLevel = Math.max(0, Math.min(5, positives - negatives));
+  return DECISIVE_LEVELS[rawLevel];
+}
+
 export const playerCards = pgTable("player_cards", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   playerId: integer("player_id").notNull().references(() => players.id),
   ownerId: varchar("owner_id").references(() => users.id),
   rarity: rarityEnum("rarity").notNull().default("common"),
   serialId: text("serial_id").unique(),
+  serialNumber: integer("serial_number"),
+  maxSupply: integer("max_supply").default(0),
   level: integer("level").notNull().default(1),
   xp: integer("xp").notNull().default(0),
+  decisiveScore: integer("decisive_score").default(35),
   last5Scores: jsonb("last_5_scores").$type<number[]>().default([0, 0, 0, 0, 0]),
   forSale: boolean("for_sale").notNull().default(false),
   price: real("price").default(0),

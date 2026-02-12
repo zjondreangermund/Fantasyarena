@@ -12,6 +12,7 @@ import {
   type WithdrawalRequest, type InsertWithdrawalRequest,
   players, playerCards, wallets, transactions, lineups, userOnboarding,
   competitions, competitionEntries, swapOffers, withdrawalRequests,
+  RARITY_SUPPLY,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -71,7 +72,8 @@ export interface IStorage {
   getAllWithdrawals(): Promise<WithdrawalRequest[]>;
   updateWithdrawalRequest(id: number, updates: Partial<WithdrawalRequest>): Promise<WithdrawalRequest | undefined>;
 
-  generateSerialId(playerId: number, playerName: string): Promise<string>;
+  generateSerialId(playerId: number, playerName: string, rarity?: string): Promise<{ serialId: string; serialNumber: number; maxSupply: number }>;
+  getSupplyCount(playerId: number, rarity: string): Promise<number>;
   backfillSerialIds(): Promise<void>;
 }
 
@@ -115,6 +117,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPlayerCard(card: InsertPlayerCard): Promise<PlayerCard> {
+    const rarity = card.rarity || "common";
+    const maxSupply = RARITY_SUPPLY[rarity] || 0;
+    if (maxSupply > 0 && card.playerId) {
+      const currentCount = await this.getSupplyCount(card.playerId, rarity);
+      if (currentCount >= maxSupply) {
+        throw new Error(`Supply cap reached for this player's ${rarity} cards (${maxSupply} max)`);
+      }
+    }
     const [created] = await db.insert(playerCards).values(card as any).returning();
     return created;
   }
@@ -368,7 +378,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async generateSerialId(playerId: number, playerName: string): Promise<string> {
+  async generateSerialId(playerId: number, playerName: string, rarity?: string): Promise<{ serialId: string; serialNumber: number; maxSupply: number }> {
     const prefix = playerName
       .split(" ")
       .map(w => w.charAt(0).toUpperCase())
@@ -380,12 +390,25 @@ export class DatabaseStorage implements IStorage {
       .select({ count: sql<number>`count(*)::int` })
       .from(playerCards)
       .where(eq(playerCards.playerId, playerId));
-    const count = (result?.count || 0) + 1;
-    return `${prefix}-${String(count).padStart(3, "0")}`;
+    const serialNumber = (result?.count || 0) + 1;
+    const maxSupply = RARITY_SUPPLY[rarity || "common"] || 0;
+    return {
+      serialId: `${prefix}-${String(serialNumber).padStart(3, "0")}`,
+      serialNumber,
+      maxSupply,
+    };
+  }
+
+  async getSupplyCount(playerId: number, rarity: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(playerCards)
+      .where(and(eq(playerCards.playerId, playerId), sql`${playerCards.rarity} = ${rarity}`));
+    return result?.count || 0;
   }
 
   async backfillSerialIds(): Promise<void> {
-    const cards = await db.select().from(playerCards).where(sql`${playerCards.serialId} IS NULL`);
+    const cards = await db.select().from(playerCards).where(sql`${playerCards.serialId} IS NULL OR ${playerCards.serialNumber} IS NULL OR ${playerCards.decisiveScore} IS NULL`);
     if (cards.length === 0) return;
 
     const playerCounts: Record<number, number> = {};
@@ -401,7 +424,7 @@ export class DatabaseStorage implements IStorage {
       if (!playerCounts[card.playerId]) playerCounts[card.playerId] = 0;
       playerCounts[card.playerId]++;
 
-      if (!card.serialId) {
+      if (!card.serialId || card.serialNumber === null || card.serialNumber === undefined || card.decisiveScore === null || card.decisiveScore === undefined) {
         const name = playerNames[card.playerId] || "UNK";
         const prefix = name
           .split(" ")
@@ -410,7 +433,14 @@ export class DatabaseStorage implements IStorage {
           .substring(0, 3)
           .padEnd(3, "X");
         const serial = `${prefix}-${String(playerCounts[card.playerId]).padStart(3, "0")}`;
-        await db.update(playerCards).set({ serialId: serial } as any).where(eq(playerCards.id, card.id));
+        const maxSupply = RARITY_SUPPLY[card.rarity] || 0;
+        const decisiveScore = Math.min(100, 35 + (card.level || 1) * 13);
+        await db.update(playerCards).set({
+          serialId: serial,
+          serialNumber: playerCounts[card.playerId],
+          maxSupply: maxSupply,
+          decisiveScore: card.decisiveScore ?? decisiveScore,
+        } as any).where(eq(playerCards.id, card.id));
       }
     }
     console.log(`Backfilled serial IDs for ${cards.length} cards`);

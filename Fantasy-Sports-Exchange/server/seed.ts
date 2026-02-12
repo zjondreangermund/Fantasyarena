@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { db } from "./db";
-import { playerCards, competitions } from "@shared/schema";
+import { playerCards, competitions, RARITY_SUPPLY } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 const seedPlayers = [
@@ -70,14 +70,26 @@ export async function seedDatabase() {
   for (const listing of marketplaceCards) {
     const player = createdPlayers[listing.playerIndex];
     if (player) {
-      const serialId = await storage.generateSerialId(player.id, player.name);
+      const supply = RARITY_SUPPLY[listing.rarity] || 0;
+      if (supply > 0) {
+        const currentCount = await storage.getSupplyCount(player.id, listing.rarity);
+        if (currentCount >= supply) {
+          console.log(`Supply cap reached for ${player.name} ${listing.rarity}, skipping`);
+          continue;
+        }
+      }
+      const { serialId, serialNumber, maxSupply } = await storage.generateSerialId(player.id, player.name, listing.rarity);
+      const decisiveScore = Math.min(100, 35 + listing.level * 13);
       await storage.createPlayerCard({
         playerId: player.id,
         ownerId: null,
         rarity: listing.rarity,
         serialId,
+        serialNumber,
+        maxSupply,
         level: listing.level,
         xp: listing.level * 100,
+        decisiveScore,
         last5Scores: listing.scores,
         forSale: true,
         price: listing.price,

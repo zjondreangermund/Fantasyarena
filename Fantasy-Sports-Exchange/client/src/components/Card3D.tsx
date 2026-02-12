@@ -1,45 +1,143 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useMemo, useCallback, Suspense, Component, type ReactNode, useEffect } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import * as THREE from "three";
 import { type PlayerCardWithPlayer, type EplPlayer } from "@shared/schema";
 import { Shield } from "lucide-react";
 
 type RarityKey = "common" | "rare" | "unique" | "epic" | "legendary";
 
 const rarityStyles: Record<RarityKey, {
-  gradient: string;
+  base: number;
   label: string;
   glow: string;
   accentColor: string;
   labelBg: string;
 }> = {
   common: {
-    gradient: "linear-gradient(145deg, #5a6577 0%, #8e9aaf 30%, #a8b5c4 50%, #8e9aaf 70%, #5a6577 100%)",
-    label: "COMMON", glow: "0 8px 32px rgba(120,140,165,0.25)",
+    base: 0x8e9aaf, label: "COMMON", glow: "0 8px 32px rgba(120,140,165,0.25)",
     accentColor: "#b8c4d4", labelBg: "rgba(100,120,140,0.85)",
   },
   rare: {
-    gradient: "linear-gradient(145deg, #7f1d1d 0%, #b91c1c 30%, #dc2626 50%, #b91c1c 70%, #7f1d1d 100%)",
-    label: "RARE", glow: "0 8px 40px rgba(220,38,38,0.3)",
+    base: 0xb91c1c, label: "RARE", glow: "0 8px 40px rgba(220,38,38,0.3)",
     accentColor: "#fca5a5", labelBg: "rgba(185,28,28,0.9)",
   },
   unique: {
-    gradient: "linear-gradient(145deg, #4c1d95 0%, #6d28d9 30%, #a855f7 50%, #6d28d9 70%, #4c1d95 100%)",
-    label: "UNIQUE", glow: "0 8px 40px rgba(124,58,237,0.3)",
+    base: 0x6d28d9, label: "UNIQUE", glow: "0 8px 40px rgba(124,58,237,0.3)",
     accentColor: "#e9d5ff", labelBg: "linear-gradient(135deg, #6d28d9, #db2777)",
   },
   epic: {
-    gradient: "linear-gradient(145deg, #0f0f2e 0%, #1a1a3e 30%, #312e81 50%, #1a1a3e 70%, #0f0f2e 100%)",
-    label: "EPIC", glow: "0 8px 40px rgba(79,70,229,0.2)",
+    base: 0x1a1a3e, label: "EPIC", glow: "0 8px 40px rgba(79,70,229,0.2)",
     accentColor: "#a5b4fc", labelBg: "linear-gradient(135deg, #1e1b4b, #312e81)",
   },
   legendary: {
-    gradient: "linear-gradient(145deg, #78350f 0%, #b45309 30%, #d97706 50%, #f59e0b 60%, #b45309 80%, #78350f 100%)",
-    label: "LEGENDARY", glow: "0 8px 48px rgba(245,158,11,0.35)",
+    base: 0xb45309, label: "LEGENDARY", glow: "0 8px 48px rgba(245,158,11,0.35)",
     accentColor: "#fef3c7", labelBg: "linear-gradient(135deg, #92400e, #d97706)",
   },
 };
 
-const voronoiSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" opacity="0.18"><defs><filter id="v"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3"/><feColorMatrix type="saturate" values="0"/></filter></defs><rect width="400" height="600" filter="url(#v)"/></svg>`;
-const voronoiBg = `url("data:image/svg+xml,${encodeURIComponent(voronoiSvg)}")`;
+interface CanvasErrorBoundaryProps {
+  children: ReactNode;
+  fallback: ReactNode;
+  onError?: () => void;
+}
+
+class CanvasErrorBoundary extends Component<CanvasErrorBoundaryProps, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch() { this.props.onError?.(); }
+  render() { return this.state.hasError ? this.props.fallback : this.props.children; }
+}
+
+function PlayerImage({ url, hovered }: { url: string; hovered: boolean }) {
+  const texture = useLoader(THREE.TextureLoader, url);
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (ref.current) {
+      ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, hovered ? 0.04 : 0, 0.1);
+      ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, hovered ? 0.03 : 0, 0.1);
+    }
+  });
+  return (
+    <mesh ref={ref} position={[0, 0.1, 0.09]}>
+      <planeGeometry args={[1.7, 2.0]} />
+      <meshStandardMaterial map={texture} transparent opacity={0.88} />
+    </mesh>
+  );
+}
+
+function CardMesh({ rarity, mouse, playerImageUrl, hovered }: {
+  rarity: RarityKey;
+  mouse: React.RefObject<{ x: number; y: number }>;
+  playerImageUrl: string;
+  hovered: boolean;
+}) {
+  const cardRef = useRef<THREE.Group>(null);
+  const colors = rarityStyles[rarity];
+
+  const geometry = useMemo(() => {
+    const shape = new THREE.Shape();
+    const w = 2, h = 3, r = 0.25;
+    shape.moveTo(-w / 2 + r, -h / 2); shape.lineTo(w / 2 - r, -h / 2);
+    shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r); shape.lineTo(w / 2, h / 2 - r);
+    shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); shape.lineTo(-w / 2 + r, h / 2);
+    shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); shape.lineTo(-w / 2, -h / 2 + r);
+    shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.15, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 8,
+    });
+    geo.center();
+    return geo;
+  }, []);
+
+  const baseMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: colors.base, metalness: 0.9, roughness: 0.3,
+  }), [colors.base]);
+
+  const frameMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(colors.base).multiplyScalar(0.35), metalness: 0.7, roughness: 0.25,
+  }), [colors.base]);
+
+  const crystalMat = useMemo(() => new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1,
+    vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `
+      varying vec2 vUv;
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      vec2 voronoi(vec2 x){
+        vec2 p=floor(x),f=fract(x); float res=8.0,id=0.0;
+        for(int j=-1;j<=1;j++) for(int i=-1;i<=1;i++){
+          vec2 b=vec2(float(i),float(j)),r=b-f+hash(p+b); float d=dot(r,r);
+          if(d<res){res=d;id=hash(p+b);}
+        } return vec2(sqrt(res),id);
+      }
+      void main(){
+        vec2 v=voronoi(vUv*12.0); float facet=v.y*0.3+0.7; float edge=smoothstep(0.02,0.06,v.x);
+        float ef=smoothstep(0.0,0.08,vUv.x)*smoothstep(0.0,0.08,vUv.y)*smoothstep(1.0,0.92,vUv.x)*smoothstep(1.0,0.92,vUv.y);
+        vec3 c=vec3(facet*edge)*ef; gl_FragColor=vec4(c,0.22*ef);
+      }`,
+  }), []);
+
+  const baseTiltX = -5 * (Math.PI / 180);
+  useFrame(() => {
+    if (cardRef.current && mouse.current) {
+      cardRef.current.rotation.y = mouse.current.x * 0.4;
+      cardRef.current.rotation.x = baseTiltX + (-mouse.current.y * 0.4);
+    }
+  });
+
+  return (
+    <group ref={cardRef}>
+      <mesh geometry={geometry} scale={[1.03, 1.03, 1.03]} material={frameMat} />
+      <mesh geometry={geometry} material={baseMat} />
+      <Suspense fallback={null}>
+        <PlayerImage url={playerImageUrl} hovered={hovered} />
+      </Suspense>
+      <mesh geometry={geometry} renderOrder={1}>
+        <primitive object={crystalMat} attach="material" />
+      </mesh>
+    </group>
+  );
+}
 
 function eplAssignRarity(player: EplPlayer): RarityKey {
   const rating = player.rating ? parseFloat(player.rating) : 0;
@@ -96,12 +194,8 @@ export default function Card3D({
 }: Card3DProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
-  const [rotX, setRotX] = useState(-5);
-  const [rotY, setRotY] = useState(0);
-  const [imgOffX, setImgOffX] = useState(0);
-  const [imgOffY, setImgOffY] = useState(0);
   const [hovered, setHovered] = useState(false);
-  const rafRef = useRef<number>(0);
+  const [webglFailed, setWebglFailed] = useState(false);
 
   const rarity = (card.rarity as RarityKey) || "common";
   const rs = rarityStyles[rarity];
@@ -135,28 +229,6 @@ export default function Card3D({
     setHovered(false);
   }, []);
 
-  useEffect(() => {
-    let running = true;
-    const animate = () => {
-      if (!running) return;
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-      const targetRotY = hovered ? mx * 18 : 0;
-      const targetRotX = hovered ? my * -12 - 5 : -5;
-      const targetImgX = hovered ? mx * 5 : 0;
-      const targetImgY = hovered ? my * -4 : 0;
-      setRotY(prev => prev + (targetRotY - prev) * 0.12);
-      setRotX(prev => prev + (targetRotX - prev) * 0.12);
-      setImgOffX(prev => prev + (targetImgX - prev) * 0.1);
-      setImgOffY(prev => prev + (targetImgY - prev) * 0.1);
-      rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-    return () => { running = false; cancelAnimationFrame(rafRef.current); };
-  }, [hovered]);
-
-  const shimmerAngle = 135 + rotY * 3;
-
   return (
     <div
       ref={wrapperRef}
@@ -164,6 +236,7 @@ export default function Card3D({
       style={{
         width: s.w, height: s.h,
         perspective: "1000px",
+        position: "relative",
         cursor: selectable ? "pointer" : "default",
       }}
       onClick={onClick}
@@ -172,7 +245,7 @@ export default function Card3D({
       onMouseLeave={handleMouseLeave}
       data-testid={`player-card-${card.id}`}
     >
-      {/* card-3d: the ONLY element that rotates */}
+      {/* card-3d: the ONLY element that gets 3D transforms from Three.js */}
       <div
         className="card-3d"
         style={{
@@ -180,65 +253,38 @@ export default function Card3D({
           width: "100%",
           height: "100%",
           transformStyle: "preserve-3d",
-          transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
-          transition: hovered ? "none" : "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
           borderRadius: 14,
         }}
       >
-        {/* metal-surface: gradient background */}
-        <div
-          className="metal-surface"
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: 14,
-            background: rs.gradient,
-            boxShadow: `${rs.glow}, inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.3)`,
-            overflow: "hidden",
-          }}
-        >
-          {/* inner frame bevel */}
-          <div style={{
-            position: "absolute", inset: 3, borderRadius: 11,
-            border: "1px solid rgba(255,255,255,0.1)",
-            pointerEvents: "none", zIndex: 2,
-          }} />
+        {/* metal-surface: Three.js WebGL canvas renders the metallic 3D card */}
+        {!webglFailed ? (
+          <CanvasErrorBoundary
+            fallback={<FallbackCard rarity={rarity} imageUrl={imageUrl} />}
+            onError={() => setWebglFailed(true)}
+          >
+            <Canvas
+              camera={{ position: [0, 0, 4.5], fov: 45 }}
+              dpr={[1, 1.5]}
+              style={{
+                position: "absolute", inset: 0,
+                width: "100%", height: "100%",
+                borderRadius: 14, pointerEvents: "none",
+              }}
+              gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
+              onCreated={({ gl }) => { gl.setClearColor(0x000000, 0); }}
+            >
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[5, 5, 5]} intensity={3} />
+              <directionalLight position={[-3, 2, 4]} intensity={1} />
+              <pointLight position={[0, 0, 4]} intensity={0.5} />
+              <CardMesh rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} hovered={hovered} />
+            </Canvas>
+          </CanvasErrorBoundary>
+        ) : (
+          <FallbackCard rarity={rarity} imageUrl={imageUrl} />
+        )}
 
-          {/* voronoi crystal texture */}
-          <div style={{
-            position: "absolute", inset: 0, borderRadius: 14,
-            backgroundImage: voronoiBg, backgroundSize: "cover",
-            mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none",
-          }} />
-
-          {/* metallic shimmer that moves with tilt */}
-          <div style={{
-            position: "absolute", inset: 0, borderRadius: 14,
-            background: `linear-gradient(${shimmerAngle}deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 20%, transparent 45%, transparent 55%, rgba(255,255,255,0.04) 80%, rgba(255,255,255,0.18) 100%)`,
-            pointerEvents: "none", zIndex: 3,
-          }} />
-
-          {/* player image */}
-          <div style={{
-            position: "absolute",
-            top: "8%", left: "10%", width: "80%", height: "58%",
-            backgroundImage: `url(${imageUrl})`,
-            backgroundSize: "contain", backgroundPosition: "center",
-            backgroundRepeat: "no-repeat", opacity: 0.88,
-            transform: `translate(${imgOffX}px, ${imgOffY}px)`,
-            transition: hovered ? "none" : "transform 0.4s ease-out",
-            pointerEvents: "none", zIndex: 1,
-          }} />
-
-          {/* vignette edge darkening */}
-          <div style={{
-            position: "absolute", inset: 0, borderRadius: 14,
-            background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.5) 100%)",
-            pointerEvents: "none", zIndex: 4,
-          }} />
-        </div>
-
-        {/* card-content: engraved text - part of the rotating card-3d */}
+        {/* card-content: engraved on the card surface, inside card-3d */}
         <div
           className="card-content"
           style={{
@@ -253,7 +299,6 @@ export default function Card3D({
             borderRadius: 14,
           }}
         >
-          {/* top row: rating + serial/rarity */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{
@@ -293,7 +338,6 @@ export default function Card3D({
             </div>
           </div>
 
-          {/* bottom: name, team, stats */}
           <div style={{ textAlign: "center" }}>
             <div style={{
               fontSize: size === "sm" ? 13 : size === "lg" ? 18 : 15,
@@ -328,23 +372,6 @@ export default function Card3D({
           </div>
         </div>
 
-        {/* holo-layer: holographic shine on top of everything */}
-        <div
-          className="holo-layer"
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: 14,
-            background: hovered
-              ? `linear-gradient(${shimmerAngle + 90}deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 70%)`
-              : "none",
-            pointerEvents: "none",
-            zIndex: 11,
-            transition: hovered ? "none" : "background 0.4s ease-out",
-          }}
-        />
-
-        {/* price tag */}
         {showPrice && card.forSale && (
           <div style={{
             position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
@@ -361,7 +388,6 @@ export default function Card3D({
         )}
       </div>
 
-      {/* selected badge sits outside the 3D rotation */}
       {selected && (
         <div style={{
           position: "absolute", top: -4, right: -4, zIndex: 30,
@@ -371,6 +397,32 @@ export default function Card3D({
           <Shield style={{ width: 12, height: 12, color: "#fff" }} />
         </div>
       )}
+    </div>
+  );
+}
+
+function FallbackCard({ rarity, imageUrl }: { rarity: RarityKey; imageUrl: string }) {
+  const baseColors: Record<RarityKey, string> = {
+    common: "linear-gradient(145deg, #5a6577, #8e9aaf 50%, #5a6577)",
+    rare: "linear-gradient(145deg, #7f1d1d, #dc2626 50%, #7f1d1d)",
+    unique: "linear-gradient(145deg, #4c1d95, #a855f7 50%, #4c1d95)",
+    epic: "linear-gradient(145deg, #0f0f2e, #312e81 50%, #0f0f2e)",
+    legendary: "linear-gradient(145deg, #78350f, #d97706 50%, #78350f)",
+  };
+  return (
+    <div style={{
+      position: "absolute", inset: 0, borderRadius: 14,
+      background: baseColors[rarity], overflow: "hidden",
+    }}>
+      <div style={{
+        position: "absolute", top: "8%", left: "10%", width: "80%", height: "60%",
+        backgroundImage: `url(${imageUrl})`, backgroundSize: "contain",
+        backgroundPosition: "center", backgroundRepeat: "no-repeat", opacity: 0.85,
+      }} />
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: 14,
+        background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.5) 100%)",
+      }} />
     </div>
   );
 }

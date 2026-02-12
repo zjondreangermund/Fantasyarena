@@ -98,7 +98,7 @@ Preferred communication style: Simple, everyday language.
 - **Fixed Supply**: Each player limited per rarity tier per season — Common: unlimited, Rare: 100, Unique: 1, Epic: 10, Legendary: 5
 - **Supply Enforcement**: Server checks supply count before creating non-common cards; blocks creation when cap reached
 - **Serial Numbers**: Every card displays #001/100 (serialNumber/maxSupply) etched into the metal corner
-- **3D Card Design (Card3D component)**: Full Three.js cards with extruded rounded rectangle geometry, beveled edges, metallic rarity-colored materials. All info (name, team, position, rating, level, decisive score, serial, rarity label) engraved as 3D metallic text using drei `Text` component — moves with card on hover parallax. No HTML overlay for stats/name.
+- **CSS 3D Card Design (Card3D component)**: Pure CSS 3D transforms with perspective, metallic rarity gradients, Voronoi crystal overlay (SVG), mouse-tracking parallax rotation, player image via `<img>` tag with onError fallback. All info (name, team, position, rating, level, decisive score, serial, rarity label) displayed on card face. No Three.js/WebGL.
 - **Decisive Score System**: Level 0 (35pts) → Level 5 (100pts) based on major actions (goals, assists, clean sheets = +1 level; red cards, own goals = -1 level)
 - **XP & Leveling**: Cards gain XP from player performance; level badge visible on card face; decisive score displayed as color-coded badge
 - **Card Visual Style**: Static Voronoi crystalline holographic overlay, mouse-tracking parallax rotation, player image texture on front face, vignette edge fade, hover-based image parallax, -5 degree default tilt

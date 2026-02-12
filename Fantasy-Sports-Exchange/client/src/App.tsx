@@ -61,12 +61,22 @@ function AuthenticatedApp() {
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
         <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 relative">
+          <div
+            className="absolute inset-0 pointer-events-none z-0"
+            style={{
+              backgroundImage: "url(/images/pl-lion-bg.png)",
+              backgroundSize: "min(55vw, 600px)",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center center",
+              opacity: 0.03,
+            }}
+          />
           <header className="flex items-center justify-between gap-2 p-2 border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-xl">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
-          <main className="flex-1 overflow-hidden flex flex-col">
+          <main className="flex-1 overflow-hidden flex flex-col relative z-10">
             <AuthenticatedRouter />
           </main>
         </div>

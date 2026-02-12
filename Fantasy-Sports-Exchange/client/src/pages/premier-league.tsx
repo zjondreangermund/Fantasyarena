@@ -23,8 +23,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const PL_BADGE_SVG = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="4"/><circle cx="100" cy="100" r="70" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="3"/><circle cx="100" cy="100" r="50" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="2"/><text x="100" y="85" text-anchor="middle" fill="rgba(255,255,255,0.025)" font-size="14" font-weight="bold" font-family="Arial">PREMIER</text><text x="100" y="110" text-anchor="middle" fill="rgba(255,255,255,0.025)" font-size="16" font-weight="bold" font-family="Arial">LEAGUE</text><path d="M70 130 L100 120 L130 130" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="2"/></svg>`)}`;
-
 export default function PremierLeaguePage() {
   const { toast } = useToast();
   const [playerSearch, setPlayerSearch] = useState("");
@@ -116,14 +114,7 @@ export default function PremierLeaguePage() {
   ];
 
   return (
-    <div
-      className="flex-1 overflow-auto relative"
-      style={{
-        backgroundImage: `url("${PL_BADGE_SVG}"), radial-gradient(ellipse at 30% 20%, rgba(56,0,100,0.15) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(0,30,80,0.1) 0%, transparent 50%)`,
-        backgroundSize: "400px 400px, cover, cover",
-        backgroundRepeat: "repeat, no-repeat, no-repeat",
-      }}
-    >
+    <div className="flex-1 overflow-auto relative">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">

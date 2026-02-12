@@ -65,10 +65,25 @@ function PlayerImage({ url, hovered }: { url: string; hovered: boolean }) {
   );
 }
 
-function CardMesh({ rarity, playerImageUrl, hovered }: {
+function ShineLight({ mouse, hovered }: { mouse: React.RefObject<{ x: number; y: number }>; hovered: boolean }) {
+  const lightRef = useRef<THREE.PointLight>(null);
+  useFrame(() => {
+    if (lightRef.current && mouse.current) {
+      const tx = hovered ? mouse.current.x * 2.5 : 0;
+      const ty = hovered ? mouse.current.y * 2.0 : 0.5;
+      lightRef.current.position.x = THREE.MathUtils.lerp(lightRef.current.position.x, tx, 0.1);
+      lightRef.current.position.y = THREE.MathUtils.lerp(lightRef.current.position.y, ty, 0.1);
+      lightRef.current.intensity = THREE.MathUtils.lerp(lightRef.current.intensity, hovered ? 6 : 2, 0.1);
+    }
+  });
+  return <pointLight ref={lightRef} position={[0, 0.5, 3]} intensity={2} color="#ffffff" distance={8} decay={1.5} />;
+}
+
+function CardMesh({ rarity, playerImageUrl, hovered, mouse }: {
   rarity: RarityKey;
   playerImageUrl: string;
   hovered: boolean;
+  mouse: React.RefObject<{ x: number; y: number }>;
 }) {
   const colors = rarityStyles[rarity];
 
@@ -88,11 +103,12 @@ function CardMesh({ rarity, playerImageUrl, hovered }: {
   }, []);
 
   const baseMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: colors.base, metalness: 0.9, roughness: 0.3,
+    color: colors.base, metalness: 0.95, roughness: 0.18,
+    envMapIntensity: 1.5,
   }), [colors.base]);
 
   const frameMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(colors.base).multiplyScalar(0.35), metalness: 0.7, roughness: 0.25,
+    color: new THREE.Color(colors.base).multiplyScalar(0.35), metalness: 0.85, roughness: 0.15,
   }), [colors.base]);
 
   const crystalMat = useMemo(() => new THREE.ShaderMaterial({
@@ -125,6 +141,7 @@ function CardMesh({ rarity, playerImageUrl, hovered }: {
       <mesh geometry={geometry} renderOrder={1}>
         <primitive object={crystalMat} attach="material" />
       </mesh>
+      <ShineLight mouse={mouse} hovered={hovered} />
     </group>
   );
 }
@@ -312,28 +329,12 @@ export default function Card3D({
               <directionalLight position={[5, 5, 5]} intensity={3} />
               <directionalLight position={[-3, 2, 4]} intensity={1} />
               <pointLight position={[0, 0, 4]} intensity={0.5} />
-              <CardMesh rarity={rarity} playerImageUrl={imageUrl} hovered={hovered} />
+              <CardMesh rarity={rarity} playerImageUrl={imageUrl} hovered={hovered} mouse={mouseRef} />
             </Canvas>
           </CanvasErrorBoundary>
         ) : (
           <FallbackCard rarity={rarity} imageUrl={imageUrl} />
         )}
-
-        {/* shimmer shine overlay - moves with tilt */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: 14,
-            background: hovered
-              ? `linear-gradient(${135 + rotY * 4}deg, rgba(255,255,255,0) 10%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.18) 65%, rgba(255,255,255,0) 90%)`
-              : `linear-gradient(${135 + rotY * 4}deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 55%, rgba(255,255,255,0) 80%)`,
-            pointerEvents: "none",
-            zIndex: 5,
-            transition: hovered ? "none" : "background 0.4s ease-out",
-            mixBlendMode: "overlay",
-          }}
-        />
 
         {/* card-content: engraved on the metal surface - rotates with card-3d via CSS */}
         <div
@@ -438,17 +439,24 @@ export default function Card3D({
           </div>
         </div>
 
-        {showPrice && card.forSale && (
+        {card.forSale && card.price != null && card.price > 0 && (
           <div style={{
-            position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", borderRadius: 6,
-            padding: "2px 10px", zIndex: 20, pointerEvents: "none",
+            position: "absolute", bottom: "11%", left: "50%", transform: "translateX(-50%)",
+            background: "linear-gradient(135deg, rgba(0,0,0,0.75), rgba(0,0,0,0.6))",
+            backdropFilter: "blur(6px)", borderRadius: 8,
+            padding: size === "sm" ? "2px 8px" : "3px 12px",
+            zIndex: 20, pointerEvents: "none",
+            border: "1px solid rgba(74,222,128,0.3)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
           }}>
             <span style={{
-              color: "#4ade80", fontSize: 14, fontWeight: 900,
+              color: "#4ade80",
+              fontSize: size === "sm" ? 10 : size === "lg" ? 14 : 12,
+              fontWeight: 900,
               fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
+              textShadow: "0 0 8px rgba(74,222,128,0.4)",
             }}>
-              N${card.price?.toFixed(2)}
+              N${card.price.toFixed(2)}
             </span>
           </div>
         )}

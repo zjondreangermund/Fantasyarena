@@ -65,13 +65,11 @@ function PlayerImage({ url, hovered }: { url: string; hovered: boolean }) {
   );
 }
 
-function CardMesh({ rarity, mouse, playerImageUrl, hovered }: {
+function CardMesh({ rarity, playerImageUrl, hovered }: {
   rarity: RarityKey;
-  mouse: React.RefObject<{ x: number; y: number }>;
   playerImageUrl: string;
   hovered: boolean;
 }) {
-  const cardRef = useRef<THREE.Group>(null);
   const colors = rarityStyles[rarity];
 
   const geometry = useMemo(() => {
@@ -117,16 +115,8 @@ function CardMesh({ rarity, mouse, playerImageUrl, hovered }: {
       }`,
   }), []);
 
-  const baseTiltX = -5 * (Math.PI / 180);
-  useFrame(() => {
-    if (cardRef.current && mouse.current) {
-      cardRef.current.rotation.y = mouse.current.x * 0.4;
-      cardRef.current.rotation.x = baseTiltX + (-mouse.current.y * 0.4);
-    }
-  });
-
   return (
-    <group ref={cardRef}>
+    <group>
       <mesh geometry={geometry} scale={[1.03, 1.03, 1.03]} material={frameMat} />
       <mesh geometry={geometry} material={baseMat} />
       <Suspense fallback={null}>
@@ -196,6 +186,9 @@ export default function Card3D({
   const mouseRef = useRef({ x: 0, y: 0 });
   const [hovered, setHovered] = useState(false);
   const [webglFailed, setWebglFailed] = useState(false);
+  const [rotX, setRotX] = useState(-5);
+  const [rotY, setRotY] = useState(0);
+  const rafRef = useRef<number>(0);
 
   const rarity = (card.rarity as RarityKey) || "common";
   const rs = rarityStyles[rarity];
@@ -229,6 +222,22 @@ export default function Card3D({
     setHovered(false);
   }, []);
 
+  useEffect(() => {
+    let running = true;
+    const animate = () => {
+      if (!running) return;
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+      const targetRotY = hovered ? mx * 20 : 0;
+      const targetRotX = hovered ? my * -15 - 5 : -5;
+      setRotY(prev => prev + (targetRotY - prev) * 0.1);
+      setRotX(prev => prev + (targetRotX - prev) * 0.1);
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { running = false; cancelAnimationFrame(rafRef.current); };
+  }, [hovered]);
+
   return (
     <div
       ref={wrapperRef}
@@ -245,7 +254,7 @@ export default function Card3D({
       onMouseLeave={handleMouseLeave}
       data-testid={`player-card-${card.id}`}
     >
-      {/* card-3d: the ONLY element that gets 3D transforms from Three.js */}
+      {/* card-3d: the ONLY element that rotates - CSS transform drives rotation for BOTH canvas and text */}
       <div
         className="card-3d"
         style={{
@@ -253,10 +262,12 @@ export default function Card3D({
           width: "100%",
           height: "100%",
           transformStyle: "preserve-3d",
+          transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
+          transition: hovered ? "none" : "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
           borderRadius: 14,
         }}
       >
-        {/* metal-surface: Three.js WebGL canvas renders the metallic 3D card */}
+        {/* metal-surface: Three.js WebGL canvas - NO internal rotation, just renders the static metallic card */}
         {!webglFailed ? (
           <CanvasErrorBoundary
             fallback={<FallbackCard rarity={rarity} imageUrl={imageUrl} />}
@@ -277,14 +288,14 @@ export default function Card3D({
               <directionalLight position={[5, 5, 5]} intensity={3} />
               <directionalLight position={[-3, 2, 4]} intensity={1} />
               <pointLight position={[0, 0, 4]} intensity={0.5} />
-              <CardMesh rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} hovered={hovered} />
+              <CardMesh rarity={rarity} playerImageUrl={imageUrl} hovered={hovered} />
             </Canvas>
           </CanvasErrorBoundary>
         ) : (
           <FallbackCard rarity={rarity} imageUrl={imageUrl} />
         )}
 
-        {/* card-content: engraved on the card surface, inside card-3d */}
+        {/* card-content: engraved on the metal surface - rotates with card-3d via CSS */}
         <div
           className="card-content"
           style={{

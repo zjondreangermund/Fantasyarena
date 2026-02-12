@@ -1,0 +1,112 @@
+Inside your useFrame (where you rotate the card), add:
+
+useFrame((state, delta) => {
+if (holoMatRef.current) {
+holoMatRef.current.uniforms.time.value += delta;
+}
+
+if (cardRef.current && mouse.current) {
+cardRef.current.rotation.y = mouse.current.x * 0.4;
+cardRef.current.rotation.x = -mouse.current.y * 0.4;
+}
+});
+
+And attach the ref:
+
+<mesh ref={holoRef} geometry={geometry} material={holoMaterial} renderOrder={1} />
+
+Change to:
+
+<mesh
+ref={holoRef}
+geometry={geometry}
+renderOrder={1}
+
+<primitive object={holoMaterial} ref={holoMatRef} attach="material" /> </mesh>
+This allows you to animate time.
+
+✅ 2️⃣ Add Player Image (Front Face Only)
+
+Right now your extrude geometry includes:
+
+Front
+
+Back
+
+Sides
+
+We want a separate plane slightly above the front.
+
+Add this after base mesh:
+
+<mesh position={[0, 0, 0.08]}>
+<planeGeometry args={[1.8, 2.6]} />
+<meshStandardMaterial map={playerTexture} />
+</mesh>
+
+You must load texture:
+
+const playerTexture = useTexture(playerImageUrl);
+
+And import:
+
+import { useTexture } from "@react-three/drei";
+
+Do NOT map image to the extruded geometry directly. That causes UV distortion.
+
+✅ 3️⃣ Proper Metallic Engraved Rating
+
+Do NOT use textGeometry.
+
+Use Drei Text.
+
+At top:
+
+import { Text } from "@react-three/drei";
+
+Then inside return:
+
+<Text
+position={[-0.75, 1.2, 0.09]}
+fontSize={0.35}
+anchorX="left"
+anchorY="middle"
+
+<meshPhysicalMaterial metalness={1} roughness={0.25} color="#cccccc" />
+{rating}
+</Text>
+
+This will:
+
+Sit slightly above front face
+
+Reflect HDR
+
+Look engraved if lighting is correct
+
+If you want it to look physically engraved (cut into surface), that requires boolean geometry subtraction — much heavier.
+
+🔥 Optional Upgrade: Better Foil Sweep
+
+Your shader currently uses:
+
+float shine = sin((vUv.x + time)*15.0)
+
+For a more premium sweep effect, replace fragment shader body with:
+
+float sweep = smoothstep(0.2, 0.8, sin(vUv.x * 8.0 + time * 3.0));
+vec3 rainbow = vec3(
+sin(time + vUv.x * 4.0) * 0.5 + 0.5,
+sin(time + vUv.y * 4.0 + 2.0) * 0.5 + 0.5,
+sin(time + vUv.x * 4.0 + 4.0) * 0.5 + 0.5
+);
+float grain = noise(vUv * 300.0) * 0.08;
+gl_FragColor = vec4(rainbow * sweep + grain, 0.28);
+
+This produces:
+
+Directional foil sweep
+
+Controlled highlight band
+
+Subtle micro grain

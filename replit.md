@@ -98,10 +98,18 @@ Preferred communication style: Simple, everyday language.
 - **Fixed Supply**: Each player limited per rarity tier per season — Common: unlimited, Rare: 100, Unique: 1, Epic: 10, Legendary: 5
 - **Supply Enforcement**: Server checks supply count before creating non-common cards; blocks creation when cap reached
 - **Serial Numbers**: Every card displays #001/100 (serialNumber/maxSupply) etched into the metal corner
-- **Metallic Card Design**: Cards use inset box-shadow for metallic bevel (no CSS borders), brushed metal gradient overlay, unified slab edges flush with card face
+- **3D Card Design (Card3D component)**: Full Three.js cards with extruded rounded rectangle geometry, beveled edges, metallic rarity-colored materials. All info (name, team, position, rating, level, decisive score, serial, rarity label) engraved as 3D metallic text using drei `Text` component — moves with card on hover parallax. No HTML overlay for stats/name.
 - **Decisive Score System**: Level 0 (35pts) → Level 5 (100pts) based on major actions (goals, assists, clean sheets = +1 level; red cards, own goals = -1 level)
 - **XP & Leveling**: Cards gain XP from player performance; level badge visible on card face; decisive score displayed as color-coded badge
-- **Card Visual Style**: No double borders, metallic rim light via inset shadows, reflective steel finish via linear gradient, crystal pattern overlay
+- **Card Visual Style**: Static Voronoi crystalline holographic overlay, mouse-tracking parallax rotation, player image texture on front face, vignette edge fade, hover-based image parallax, -5 degree default tilt
+- **Unified Card Template**: All pages (Collection, Marketplace, Premier League, Competitions, Onboarding) use the same Card3D component via PlayerCard wrapper
+
+### Sorare API Integration (Added Feb 2026)
+- **Service**: `server/services/sorare.ts` — queries Sorare's free GraphQL federation API for player images and stats
+- **Endpoint**: `GET /api/sorare/player?firstName=...&lastName=...` — returns player image, scores, club info
+- **Rate Limiting**: 1 request/sec throttle, 60s backoff on 429, 24h positive cache, 6h negative cache
+- **No Auth Required**: Sorare's read-only GraphQL API is free, no API key needed
+- **Fallback**: Cards use API-Football player photos by default; Sorare images are an optional enhancement
 
 ### Build System
 - **Development**: `npm run dev` runs tsx with Vite dev server middleware (HMR enabled)
@@ -131,3 +139,4 @@ Preferred communication style: Simple, everyday language.
 | `embla-carousel-react` | Carousel component |
 | `vaul` | Drawer component |
 | `memoizee` | Memoization for OIDC config |
+| `three` / `@react-three/fiber` / `@react-three/drei` | 3D card rendering with Three.js |

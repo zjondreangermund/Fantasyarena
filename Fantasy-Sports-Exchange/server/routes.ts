@@ -9,6 +9,7 @@ import {
   initialSync, syncStandings, syncFixtures, syncTopPlayers, syncInjuries,
   getEplPlayers, getEplFixtures, getEplInjuries, getEplStandings,
 } from "./services/apiFootball";
+import { fetchSorarePlayer, fetchSorarePlayersBatch, getSorareImageUrl } from "./services/sorare";
 
 function randomScores(): number[] {
   return Array.from({ length: 5 }, () => Math.floor(Math.random() * 80) + 10);
@@ -962,6 +963,33 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating card scores:", error);
       res.status(500).json({ message: "Failed to update scores" });
+    }
+  });
+
+  app.get("/api/sorare/player", async (req, res) => {
+    try {
+      const firstName = String(req.query.firstName || "");
+      const lastName = String(req.query.lastName || "");
+      if (!firstName || !lastName) {
+        return res.status(400).json({ message: "firstName and lastName required" });
+      }
+      const player = await fetchSorarePlayer(firstName, lastName);
+      if (!player) {
+        return res.status(404).json({ message: "Player not found on Sorare" });
+      }
+      res.json({
+        slug: player.slug,
+        displayName: player.displayName,
+        imageUrl: getSorareImageUrl(player),
+        position: player.position,
+        age: player.age,
+        club: player.activeClub?.name || null,
+        clubLogo: player.activeClub?.pictureUrl || null,
+        recentScores: player.so5Scores.map((s: { score: number }) => s.score),
+      });
+    } catch (error) {
+      console.error("Sorare player fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch Sorare player data" });
     }
   });
 

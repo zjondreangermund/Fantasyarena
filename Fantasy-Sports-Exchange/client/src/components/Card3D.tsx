@@ -1,9 +1,9 @@
 import { Text, useTexture } from "@react-three/drei";
-import { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { type PlayerCardWithPlayer, type EplPlayer } from "@shared/schema";
-import { Zap, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 
 type RarityKey = "common" | "rare" | "unique" | "epic" | "legendary";
 
@@ -14,6 +14,7 @@ const rarityColors: Record<RarityKey, {
   labelBg: string;
   glow: string;
   textAccent: string;
+  textHex: string;
 }> = {
   common: {
     base: 0x8e9aaf,
@@ -22,6 +23,7 @@ const rarityColors: Record<RarityKey, {
     labelBg: "rgba(100,120,140,0.9)",
     glow: "rgba(120,140,165,0.3)",
     textAccent: "#cbd5e1",
+    textHex: "#b8c4d4",
   },
   rare: {
     base: 0xb91c1c,
@@ -30,6 +32,7 @@ const rarityColors: Record<RarityKey, {
     labelBg: "rgba(185,28,28,0.95)",
     glow: "rgba(220,38,38,0.35)",
     textAccent: "#fca5a5",
+    textHex: "#fca5a5",
   },
   unique: {
     base: 0x6d28d9,
@@ -38,6 +41,7 @@ const rarityColors: Record<RarityKey, {
     labelBg: "linear-gradient(135deg, #6d28d9, #db2777)",
     glow: "rgba(124,58,237,0.35)",
     textAccent: "#e9d5ff",
+    textHex: "#e9d5ff",
   },
   epic: {
     base: 0x1a1a3e,
@@ -46,6 +50,7 @@ const rarityColors: Record<RarityKey, {
     labelBg: "linear-gradient(135deg, #1e1b4b, #312e81)",
     glow: "rgba(79,70,229,0.25)",
     textAccent: "#a5b4fc",
+    textHex: "#a5b4fc",
   },
   legendary: {
     base: 0xb45309,
@@ -54,30 +59,26 @@ const rarityColors: Record<RarityKey, {
     labelBg: "linear-gradient(135deg, #92400e, #d97706)",
     glow: "rgba(245,158,11,0.4)",
     textAccent: "#fef3c7",
+    textHex: "#fef3c7",
   },
 };
 
-function ScoreBar({ scores }: { scores: number[] }) {
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 18 }}>
-      {scores.map((score, i) => (
-        <div
-          key={i}
-          style={{
-            width: 5,
-            borderRadius: 2,
-            height: `${Math.max(15, (score / 100) * 100)}%`,
-            backgroundColor:
-              score >= 70 ? "hsl(150,60%,45%)" : score >= 40 ? "hsl(45,93%,47%)" : "hsl(0,72%,51%)",
-            opacity: 0.6 + (i / scores.length) * 0.4,
-          }}
-        />
-      ))}
-    </div>
-  );
+interface CardMeshProps {
+  rarity: RarityKey;
+  mouse: React.RefObject<{x: number; y: number}>;
+  playerImageUrl: string;
+  hovered: boolean;
+  playerName: string;
+  teamName: string;
+  position: string;
+  rating: number;
+  level: number;
+  decisiveScore: number;
+  rarityLabel: string;
+  serialText: string;
 }
 
-function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: RarityKey; mouse: React.RefObject<{x: number; y: number}>; playerImageUrl: string; rating: number; hovered: boolean }) {
+function CardMesh({ rarity, mouse, playerImageUrl, hovered, playerName, teamName, position, rating, level, decisiveScore, rarityLabel, serialText }: CardMeshProps) {
   const cardRef = useRef<THREE.Group>(null);
   const imageRef = useRef<THREE.Mesh>(null);
 
@@ -174,6 +175,8 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: 
     });
   }, []);
 
+  const dsColor = decisiveScore >= 80 ? "#4ade80" : decisiveScore >= 60 ? "#facc15" : "#94a3b8";
+
   const baseTiltX = -5 * (Math.PI / 180);
 
   useFrame(() => {
@@ -196,6 +199,11 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: 
     }
   });
 
+  const safeName = playerName || "Unknown";
+  const safeTeam = teamName || "Unknown";
+  const displayName = safeName.length > 14 ? safeName.substring(0, 13) + "." : safeName;
+  const displayTeam = safeTeam.length > 18 ? safeTeam.substring(0, 17) + "." : safeTeam;
+
   return (
     <group ref={cardRef}>
       <mesh geometry={geometry} scale={[1.02, 1.02, 1.02]}>
@@ -204,23 +212,99 @@ function CardMesh({ rarity, mouse, playerImageUrl, rating, hovered }: { rarity: 
 
       <mesh geometry={geometry} material={baseMaterial} />
 
-      <mesh ref={imageRef} position={[0, 0, 0.08]}>
-        <planeGeometry args={[1.8, 2.6]} />
-        <meshStandardMaterial map={playerTexture} transparent />
+      <mesh ref={imageRef} position={[0, 0.15, 0.08]}>
+        <planeGeometry args={[1.7, 2.0]} />
+        <meshStandardMaterial map={playerTexture} transparent opacity={0.92} />
       </mesh>
 
       <Text
-        position={[-0.75, 1.2, 0.09]}
-        fontSize={0.35}
+        position={[-0.82, 1.25, 0.09]}
+        fontSize={0.38}
         anchorX="left"
         anchorY="middle"
+        letterSpacing={-0.02}
       >
-        <meshPhysicalMaterial
-          metalness={1}
-          roughness={0.25}
-          color="#cccccc"
-        />
+        <meshPhysicalMaterial metalness={1} roughness={0.2} color="#e0e0e0" />
         {rating.toString()}
+      </Text>
+
+      <Text
+        position={[-0.82, 0.95, 0.09]}
+        fontSize={0.14}
+        anchorX="left"
+        anchorY="middle"
+        letterSpacing={0.12}
+      >
+        <meshPhysicalMaterial metalness={0.9} roughness={0.3} color={colors.textHex} />
+        {position}
+      </Text>
+
+      <Text
+        position={[0.82, 1.25, 0.09]}
+        fontSize={0.12}
+        anchorX="right"
+        anchorY="middle"
+        letterSpacing={0.08}
+      >
+        <meshPhysicalMaterial metalness={0.8} roughness={0.35} color="#999999" />
+        {serialText}
+      </Text>
+
+      <Text
+        position={[0.82, 1.05, 0.09]}
+        fontSize={0.11}
+        anchorX="right"
+        anchorY="middle"
+        letterSpacing={0.15}
+      >
+        <meshPhysicalMaterial metalness={0.9} roughness={0.3} color={colors.textHex} />
+        {rarityLabel}
+      </Text>
+
+      <Text
+        position={[0, -1.0, 0.09]}
+        fontSize={0.2}
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.08}
+        maxWidth={1.8}
+      >
+        <meshPhysicalMaterial metalness={1} roughness={0.15} color="#ffffff" />
+        {displayName.toUpperCase()}
+      </Text>
+
+      <Text
+        position={[0, -1.2, 0.09]}
+        fontSize={0.11}
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.1}
+        maxWidth={1.8}
+      >
+        <meshPhysicalMaterial metalness={0.8} roughness={0.3} color="#aaaaaa" />
+        {displayTeam.toUpperCase()}
+      </Text>
+
+      <Text
+        position={[-0.65, -1.38, 0.09]}
+        fontSize={0.11}
+        anchorX="left"
+        anchorY="middle"
+        letterSpacing={0.05}
+      >
+        <meshPhysicalMaterial metalness={0.9} roughness={0.25} color="#facc15" />
+        {`LV.${level}`}
+      </Text>
+
+      <Text
+        position={[0.65, -1.38, 0.09]}
+        fontSize={0.11}
+        anchorX="right"
+        anchorY="middle"
+        letterSpacing={0.05}
+      >
+        <meshPhysicalMaterial metalness={0.9} roughness={0.25} color={dsColor} />
+        {`DS ${decisiveScore}`}
       </Text>
 
       <mesh geometry={geometry} renderOrder={1}>
@@ -291,6 +375,7 @@ interface Card3DProps {
   selectable?: boolean;
   onClick?: () => void;
   showPrice?: boolean;
+  sorareImageUrl?: string | null;
 }
 
 export default function Card3D({
@@ -300,6 +385,7 @@ export default function Card3D({
   selectable = false,
   onClick,
   showPrice = false,
+  sorareImageUrl,
 }: Card3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -309,14 +395,19 @@ export default function Card3D({
   const colors = rarityColors[rarity];
 
   const sizeMap = {
-    sm: { w: 170, h: 250, fontSize: 0.75 },
-    md: { w: 220, h: 320, fontSize: 0.9 },
-    lg: { w: 270, h: 390, fontSize: 1.1 },
+    sm: { w: 170, h: 250 },
+    md: { w: 220, h: 320 },
+    lg: { w: 270, h: 390 },
   };
   const s = sizeMap[size];
 
   const imageIndex = ((card.playerId - 1) % 6) + 1;
-  const imageUrl = card.player?.imageUrl || `/images/player-${imageIndex}.png`;
+  const fallbackImage = card.player?.imageUrl || `/images/player-${imageIndex}.png`;
+  const imageUrl = sorareImageUrl || fallbackImage;
+
+  const serialText = card.serialNumber && card.maxSupply
+    ? `#${String(card.serialNumber).padStart(3, "0")}/${card.maxSupply}`
+    : card.serialId || "";
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current) return;
@@ -364,263 +455,47 @@ export default function Card3D({
         <directionalLight position={[5, 5, 5]} intensity={3} />
         <directionalLight position={[-3, 2, 4]} intensity={1} />
         <pointLight position={[0, 0, 4]} intensity={0.5} />
-        <CardMesh rarity={rarity} mouse={mouseRef} playerImageUrl={imageUrl} rating={card.player?.overall || 0} hovered={hovered} />
+        <Suspense fallback={null}>
+          <CardMesh
+            rarity={rarity}
+            mouse={mouseRef}
+            playerImageUrl={imageUrl}
+            hovered={hovered}
+            playerName={card.player?.name || "Unknown"}
+            teamName={card.player?.team || "Unknown"}
+            position={card.player?.position || "N/A"}
+            rating={card.player?.overall || 0}
+            level={card.level || 1}
+            decisiveScore={card.decisiveScore || 35}
+            rarityLabel={colors.label}
+            serialText={serialText}
+          />
+        </Suspense>
       </Canvas>
 
-      <div
-        style={{
+      {showPrice && card.forSale && (
+        <div style={{
           position: "absolute",
-          inset: 0,
+          bottom: 8,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)",
+          borderRadius: 6,
+          padding: "2px 10px",
+          zIndex: 10,
           pointerEvents: "none",
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: 14,
-          overflow: "hidden",
-        }}
-      >
-        <div style={{
-          padding: `${8 * s.fontSize}px ${10 * s.fontSize}px`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          zIndex: 2,
-        }}>
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-          }}>
-            <span style={{
-              color: "#fff",
-              fontWeight: 900,
-              fontSize: 28 * s.fontSize,
-              lineHeight: 1,
-              textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.15)",
-              fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
-            }}>
-              {card.player?.overall || 0}
-            </span>
-            <span style={{
-              background: "rgba(0,0,0,0.5)",
-              backdropFilter: "blur(4px)",
-              color: colors.textAccent,
-              fontWeight: 800,
-              fontSize: 8 * s.fontSize,
-              letterSpacing: "0.12em",
-              padding: `2px ${5 * s.fontSize}px`,
-              borderRadius: 3,
-            }}>
-              {card.player?.position || "N/A"}
-            </span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-            {card.serialNumber && card.maxSupply ? (
-              <span style={{
-                color: "rgba(255,255,255,0.35)",
-                fontWeight: 900,
-                fontSize: 7 * s.fontSize,
-                fontFamily: "'Inter',monospace",
-                letterSpacing: "0.05em",
-                textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-              }}>
-                #{String(card.serialNumber).padStart(3, "0")}/{card.maxSupply}
-              </span>
-            ) : card.serialId ? (
-              <span style={{
-                color: "rgba(255,255,255,0.3)",
-                fontWeight: 800,
-                fontSize: 6 * s.fontSize,
-                fontFamily: "'Inter',monospace",
-                textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-              }}>
-                {card.serialId}
-              </span>
-            ) : null}
-
-            <div style={{
-              width: 22 * s.fontSize,
-              height: 22 * s.fontSize,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0,0,0,0.4)",
-              backdropFilter: "blur(4px)",
-              borderRadius: "50%",
-              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08)",
-            }}>
-              <span style={{
-                color: "rgba(255,255,255,0.7)",
-                fontWeight: 900,
-                fontSize: 11 * s.fontSize,
-                fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
-              }}>
-                {card.player?.team?.charAt(0) || "?"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div style={{
-          position: "absolute",
-          top: 32 * s.fontSize,
-          left: 10 * s.fontSize,
-          zIndex: 2,
         }}>
           <span style={{
-            background: colors.labelBg,
-            color: colors.textAccent,
+            color: "#4ade80",
+            fontSize: 14,
             fontWeight: 900,
-            fontSize: 7 * s.fontSize,
-            letterSpacing: "0.12em",
-            padding: `2px ${5 * s.fontSize}px`,
-            borderRadius: 3,
-            textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+            fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
           }}>
-            {colors.label}
+            N${card.price?.toFixed(2)}
           </span>
         </div>
-
-        <div style={{ flex: 1 }} />
-
-        <div style={{
-          position: "relative",
-          width: "55%",
-          aspectRatio: "4/5",
-          margin: "-10% auto 0",
-          borderRadius: 10,
-          overflow: "hidden",
-          boxShadow: `
-            inset 0 0 15px rgba(0,0,0,0.6),
-            inset 0 4px 15px rgba(0,0,0,0.5),
-            0 6px 20px rgba(0,0,0,0.5)
-          `,
-          zIndex: 1,
-        }}>
-          <img
-            src={imageUrl}
-            alt={card.player?.name || "Player"}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "top center",
-              filter: "contrast(1.08) saturate(1.12) drop-shadow(0 8px 16px rgba(0,0,0,0.6))",
-            }}
-          />
-          <div style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "30%",
-            background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
-            pointerEvents: "none",
-          }} />
-        </div>
-
-        <div style={{
-          background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.5) 85%, transparent 100%)",
-          padding: `${10 * s.fontSize}px ${10 * s.fontSize}px ${8 * s.fontSize}px`,
-          zIndex: 2,
-          marginTop: "-8%",
-          paddingTop: `${18 * s.fontSize}px`,
-        }}>
-          <h3 style={{
-            color: "#fff",
-            fontWeight: 900,
-            fontSize: 15 * s.fontSize,
-            textAlign: "center",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            lineHeight: 1.05,
-            fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
-            textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.4)",
-            marginBottom: 2,
-          }}>
-            {card.player?.name || "Unknown"}
-          </h3>
-          <p style={{
-            color: "rgba(255,255,255,0.5)",
-            fontSize: 7.5 * s.fontSize,
-            textAlign: "center",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            fontFamily: "'Inter',system-ui,sans-serif",
-            textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-            marginBottom: 4,
-          }}>
-            {card.player?.team} &middot; {card.player?.nationality}
-          </p>
-
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 4 * s.fontSize,
-            paddingTop: 4 * s.fontSize,
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-          }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-              background: "rgba(0,0,0,0.4)",
-              backdropFilter: "blur(4px)",
-              borderRadius: 4,
-              padding: `${2 * s.fontSize}px ${4 * s.fontSize}px`,
-            }}>
-              <Zap style={{ width: 10 * s.fontSize, height: 10 * s.fontSize, color: "#facc15" }} />
-              <span style={{
-                color: "rgba(255,255,255,0.9)",
-                fontSize: 8.5 * s.fontSize,
-                fontWeight: 800,
-                fontFamily: "'Inter',system-ui,sans-serif",
-                textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-              }}>
-                Lv.{card.level}
-              </span>
-            </div>
-
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-              background: "rgba(0,0,0,0.4)",
-              backdropFilter: "blur(4px)",
-              borderRadius: 4,
-              padding: `${2 * s.fontSize}px ${4 * s.fontSize}px`,
-            }}>
-              <span style={{
-                color: card.decisiveScore && card.decisiveScore >= 80 ? "#4ade80" : card.decisiveScore && card.decisiveScore >= 60 ? "#facc15" : "rgba(255,255,255,0.7)",
-                fontSize: 8.5 * s.fontSize,
-                fontWeight: 900,
-                fontFamily: "'Inter',monospace",
-                textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-              }}>
-                {card.decisiveScore || 35}
-              </span>
-            </div>
-
-            <ScoreBar scores={card.last5Scores as number[]} />
-          </div>
-
-          {showPrice && card.forSale && (
-            <div style={{ marginTop: 4, textAlign: "center" }}>
-              <span style={{
-                color: "#4ade80",
-                fontSize: 11 * s.fontSize,
-                fontWeight: 900,
-                fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
-                textShadow: "0 0 8px rgba(74,222,128,0.3), 1px 1px 2px rgba(0,0,0,0.8)",
-              }}>
-                N${card.price?.toFixed(2)}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {selected && (
         <div style={{

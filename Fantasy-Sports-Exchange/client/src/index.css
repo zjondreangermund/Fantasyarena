@@ -329,36 +329,44 @@
 }
 @layer components {
   .card-slab {
+    --slab-color-1: #b0b0b0;
+    --slab-color-2: #a0a0a0;
+    --slab-color-3: #909090;
+    --slab-color-4: #808080;
+    --slab-color-5: #707070;
     @apply relative overflow-visible transition-all duration-500;
     transform-style: preserve-3d;
+    transform: rotateY(-5deg);
     border-radius: 12px;
-    
-    /* 1. PHYSICAL SLAB DEPTH */
-    /* This creates the thick side wall of the plastic card */
     box-shadow: 
-      0px 1px 1px rgba(255,255,255,0.3) inset, /* Top highlight */
-      1px 1px 0px #b0b0b0,
-      2px 2px 0px #a0a0a0,
-      3px 3px 0px #909090,
-      4px 4px 0px #808080,
-      5px 5px 0px #707070, 
+      0px 1px 1px rgba(255,255,255,0.3) inset,
+      1px 1px 0px var(--slab-color-1),
+      2px 2px 0px var(--slab-color-2),
+      3px 3px 0px var(--slab-color-3),
+      4px 4px 0px var(--slab-color-4),
+      5px 5px 0px var(--slab-color-5),
       15px 15px 30px rgba(0, 0, 0, 0.6) !important;
   }
 
-  /* 2. THE GEOMETRIC GLASS OVERLAY */
-  /* This adds that diamond/triangle pattern from your reference photo */
+  .card-slab:hover {
+    transform: rotateY(-5deg) translate(-2px, -2px);
+    box-shadow: 
+      0px 1px 1px rgba(255,255,255,0.3) inset,
+      2px 2px 0px var(--slab-color-1),
+      4px 4px 0px var(--slab-color-2),
+      6px 6px 0px var(--slab-color-4),
+      20px 20px 40px rgba(0, 0, 0, 0.7) !important;
+  }
+
   .card-slab::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: 12px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M0 0h40L20 20z'/%3E%3C/g%3E%3C/svg%3E");
-    ma: linear-gradient(to bottom, black 50%, transparent);
     pointer-events: none;
   }
 
-  /* 3. THE 3D POP EFFECT */
-  /* This makes the player image actually float toward the user */
   .player-image-container {
     transform: translateZ(40px);
     filter: drop-shadow(0 15px 15px rgba(0,0,0,0.5));

@@ -11,6 +11,7 @@ const rarityConfig = {
     accent: "text-zinc-300",
     slabBg: "#b0b0b0",
     studioGlow: "",
+    slabColors: ["#c0c0c0", "#b0b0b0", "#a0a0a0", "#909090", "#808080"],
   },
   rare: {
     gradient: "from-red-800 via-red-600 to-red-800",
@@ -20,6 +21,7 @@ const rarityConfig = {
     accent: "text-red-300",
     slabBg: "#dc2626",
     studioGlow: "",
+    slabColors: ["#ef4444", "#dc2626", "#b91c1c", "#991b1b", "#7f1d1d"],
   },
   unique: {
     gradient: "from-purple-800 via-fuchsia-600 to-purple-800",
@@ -29,6 +31,7 @@ const rarityConfig = {
     accent: "text-purple-300",
     slabBg: "#7c3aed",
     studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(168,85,247,0.35) 0%, rgba(168,85,247,0.1) 40%, transparent 70%)",
+    slabColors: ["#8b5cf6", "#7c3aed", "#6d28d9", "#5b21b6", "#4c1d95"],
   },
   epic: {
     gradient: "from-slate-950 via-indigo-950 to-slate-950",
@@ -38,6 +41,7 @@ const rarityConfig = {
     accent: "text-indigo-300",
     slabBg: "#1e1b4b",
     studioGlow: "",
+    slabColors: ["#312e81", "#2e2a6e", "#1e1b4b", "#1a1744", "#15123d"],
   },
   legendary: {
     gradient: "from-amber-800 via-yellow-500 to-amber-800",
@@ -47,6 +51,7 @@ const rarityConfig = {
     accent: "text-yellow-300",
     slabBg: "#d97706",
     studioGlow: "radial-gradient(ellipse at 50% 40%, rgba(251,191,36,0.4) 0%, rgba(251,191,36,0.12) 40%, transparent 70%)",
+    slabColors: ["#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f"],
   },
 };
 
@@ -103,7 +108,15 @@ export default function PlayerCard({
   return (
     <div
       className={`card-slab ${sizeClasses[size]} ${selectable ? "hover:scale-105" : ""} ${selected ? "scale-105 ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
-      style={{ background: rarity.slabBg, perspective: "600px" }}
+      style={{
+        background: rarity.slabBg,
+        perspective: "600px",
+        "--slab-color-1": rarity.slabColors[0],
+        "--slab-color-2": rarity.slabColors[1],
+        "--slab-color-3": rarity.slabColors[2],
+        "--slab-color-4": rarity.slabColors[3],
+        "--slab-color-5": rarity.slabColors[4],
+      } as React.CSSProperties}
       onClick={onClick}
       data-testid={`player-card-${card.id}`}
     >

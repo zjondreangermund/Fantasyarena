@@ -182,7 +182,7 @@ export default function EPLPlayerCard({
     const centerY = rect.height / 2;
     const rotateX = ((y - centerY) / centerY) * -12;
     const rotateY = ((x - centerX) / centerX) * 12;
-    innerRef.current.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.04,1.04,1.04)`;
+    innerRef.current.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY - 5}deg) scale3d(1.04,1.04,1.04)`;
     if (shineRef.current) {
       shineRef.current.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.18) 0%, transparent 55%)`;
       shineRef.current.style.opacity = "1";
@@ -191,7 +191,7 @@ export default function EPLPlayerCard({
 
   const handleMouseLeave = useCallback(() => {
     if (!innerRef.current) return;
-    innerRef.current.style.transform = "rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
+    innerRef.current.style.transform = "rotateX(0deg) rotateY(-5deg) scale3d(1,1,1)";
     if (shineRef.current) shineRef.current.style.opacity = "0";
   }, []);
 
@@ -228,6 +228,7 @@ export default function EPLPlayerCard({
           position: "relative",
           transformStyle: "preserve-3d",
           transition: "transform 0.2s ease-out",
+          transform: "rotateY(-5deg)",
         }}
       >
         {/* RIGHT EDGE — thick side slab */}

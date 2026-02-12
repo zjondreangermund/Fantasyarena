@@ -1,318 +1,64 @@
-import { Text, useTexture } from "@react-three/drei";
-import { useRef, useState, useMemo, useCallback, Suspense } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { useRef, useState, useCallback, useMemo } from "react";
 import { type PlayerCardWithPlayer, type EplPlayer } from "@shared/schema";
 import { Shield } from "lucide-react";
 
 type RarityKey = "common" | "rare" | "unique" | "epic" | "legendary";
 
-const rarityColors: Record<RarityKey, {
-  base: number;
-  accent: string;
+const rarityStyles: Record<RarityKey, {
+  gradient: string;
+  border: string;
+  glow: string;
   label: string;
   labelBg: string;
-  glow: string;
-  textAccent: string;
-  textHex: string;
+  textColor: string;
+  accentColor: string;
 }> = {
   common: {
-    base: 0x8e9aaf,
-    accent: "#b8c4d4",
+    gradient: "linear-gradient(145deg, #5a6577 0%, #8e9aaf 30%, #a8b5c4 50%, #8e9aaf 70%, #5a6577 100%)",
+    border: "#8e9aaf",
+    glow: "0 0 20px rgba(120,140,165,0.3)",
     label: "COMMON",
-    labelBg: "rgba(100,120,140,0.9)",
-    glow: "rgba(120,140,165,0.3)",
-    textAccent: "#cbd5e1",
-    textHex: "#b8c4d4",
+    labelBg: "rgba(100,120,140,0.85)",
+    textColor: "#cbd5e1",
+    accentColor: "#b8c4d4",
   },
   rare: {
-    base: 0xb91c1c,
-    accent: "#dc2626",
+    gradient: "linear-gradient(145deg, #7f1d1d 0%, #b91c1c 30%, #dc2626 50%, #b91c1c 70%, #7f1d1d 100%)",
+    border: "#dc2626",
+    glow: "0 0 25px rgba(220,38,38,0.35)",
     label: "RARE",
-    labelBg: "rgba(185,28,28,0.95)",
-    glow: "rgba(220,38,38,0.35)",
-    textAccent: "#fca5a5",
-    textHex: "#fca5a5",
+    labelBg: "rgba(185,28,28,0.9)",
+    textColor: "#fca5a5",
+    accentColor: "#fca5a5",
   },
   unique: {
-    base: 0x6d28d9,
-    accent: "#a855f7",
+    gradient: "linear-gradient(145deg, #4c1d95 0%, #6d28d9 30%, #a855f7 50%, #6d28d9 70%, #4c1d95 100%)",
+    border: "#a855f7",
+    glow: "0 0 30px rgba(124,58,237,0.35)",
     label: "UNIQUE",
     labelBg: "linear-gradient(135deg, #6d28d9, #db2777)",
-    glow: "rgba(124,58,237,0.35)",
-    textAccent: "#e9d5ff",
-    textHex: "#e9d5ff",
+    textColor: "#e9d5ff",
+    accentColor: "#e9d5ff",
   },
   epic: {
-    base: 0x1a1a3e,
-    accent: "#6366f1",
+    gradient: "linear-gradient(145deg, #0f0f2e 0%, #1a1a3e 30%, #312e81 50%, #1a1a3e 70%, #0f0f2e 100%)",
+    border: "#6366f1",
+    glow: "0 0 30px rgba(79,70,229,0.3)",
     label: "EPIC",
     labelBg: "linear-gradient(135deg, #1e1b4b, #312e81)",
-    glow: "rgba(79,70,229,0.25)",
-    textAccent: "#a5b4fc",
-    textHex: "#a5b4fc",
+    textColor: "#a5b4fc",
+    accentColor: "#a5b4fc",
   },
   legendary: {
-    base: 0xb45309,
-    accent: "#d97706",
+    gradient: "linear-gradient(145deg, #78350f 0%, #b45309 30%, #d97706 50%, #f59e0b 60%, #b45309 80%, #78350f 100%)",
+    border: "#f59e0b",
+    glow: "0 0 35px rgba(245,158,11,0.4)",
     label: "LEGENDARY",
     labelBg: "linear-gradient(135deg, #92400e, #d97706)",
-    glow: "rgba(245,158,11,0.4)",
-    textAccent: "#fef3c7",
-    textHex: "#fef3c7",
+    textColor: "#fef3c7",
+    accentColor: "#fef3c7",
   },
 };
-
-interface CardMeshProps {
-  rarity: RarityKey;
-  mouse: React.RefObject<{x: number; y: number}>;
-  playerImageUrl: string;
-  hovered: boolean;
-  playerName: string;
-  teamName: string;
-  position: string;
-  rating: number;
-  level: number;
-  decisiveScore: number;
-  rarityLabel: string;
-  serialText: string;
-}
-
-function CardMesh({ rarity, mouse, playerImageUrl, hovered, playerName, teamName, position, rating, level, decisiveScore, rarityLabel, serialText }: CardMeshProps) {
-  const cardRef = useRef<THREE.Group>(null);
-  const imageRef = useRef<THREE.Mesh>(null);
-
-  const colors = rarityColors[rarity];
-  const playerTexture = useTexture(playerImageUrl);
-
-  const geometry = useMemo(() => {
-    const shape = new THREE.Shape();
-    const width = 2;
-    const height = 3;
-    const radius = 0.25;
-
-    shape.moveTo(-width / 2 + radius, -height / 2);
-    shape.lineTo(width / 2 - radius, -height / 2);
-    shape.quadraticCurveTo(width / 2, -height / 2, width / 2, -height / 2 + radius);
-    shape.lineTo(width / 2, height / 2 - radius);
-    shape.quadraticCurveTo(width / 2, height / 2, width / 2 - radius, height / 2);
-    shape.lineTo(-width / 2 + radius, height / 2);
-    shape.quadraticCurveTo(-width / 2, height / 2, -width / 2, height / 2 - radius);
-    shape.lineTo(-width / 2, -height / 2 + radius);
-    shape.quadraticCurveTo(-width / 2, -height / 2, -width / 2 + radius, -height / 2);
-
-    const geo = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.15,
-      bevelEnabled: true,
-      bevelThickness: 0.05,
-      bevelSize: 0.05,
-      bevelSegments: 8,
-    });
-    geo.center();
-    return geo;
-  }, []);
-
-  const baseMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: colors.base,
-      metalness: 0.9,
-      roughness: 0.3,
-    });
-  }, [colors.base]);
-
-  const crystalMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      vertexShader: `
-        varying vec2 vUv;
-        void main(){
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec2 vUv;
-
-        float hash(vec2 p) {
-          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-        }
-
-        vec2 voronoi(vec2 x) {
-          vec2 p = floor(x);
-          vec2 f = fract(x);
-          float res = 8.0;
-          float id = 0.0;
-          for(int j = -1; j <= 1; j++) {
-            for(int i = -1; i <= 1; i++) {
-              vec2 b = vec2(float(i), float(j));
-              vec2 r = b - f + hash(p + b);
-              float d = dot(r, r);
-              if(d < res) {
-                res = d;
-                id = hash(p + b);
-              }
-            }
-          }
-          return vec2(sqrt(res), id);
-        }
-
-        void main(){
-          vec2 v = voronoi(vUv * 12.0);
-          float facet = v.y * 0.3 + 0.7;
-          float edge = smoothstep(0.02, 0.06, v.x);
-          float edgeFade = smoothstep(0.0, 0.08, vUv.x) *
-                           smoothstep(0.0, 0.08, vUv.y) *
-                           smoothstep(1.0, 0.92, vUv.x) *
-                           smoothstep(1.0, 0.92, vUv.y);
-          vec3 color = vec3(facet * edge);
-          color *= edgeFade;
-          gl_FragColor = vec4(color, 0.22 * edgeFade);
-        }
-      `,
-    });
-  }, []);
-
-  const dsColor = decisiveScore >= 80 ? "#4ade80" : decisiveScore >= 60 ? "#facc15" : "#94a3b8";
-
-  const baseTiltX = -5 * (Math.PI / 180);
-
-  useFrame(() => {
-    if (cardRef.current && mouse.current) {
-      cardRef.current.rotation.y = mouse.current.x * 0.4;
-      cardRef.current.rotation.x = baseTiltX + (-mouse.current.y * 0.4);
-    }
-
-    if (imageRef.current) {
-      imageRef.current.position.x = THREE.MathUtils.lerp(
-        imageRef.current.position.x,
-        hovered ? 0.03 : 0,
-        0.1
-      );
-      imageRef.current.position.y = THREE.MathUtils.lerp(
-        imageRef.current.position.y,
-        hovered ? 0.02 : 0,
-        0.1
-      );
-    }
-  });
-
-  const safeName = playerName || "Unknown";
-  const safeTeam = teamName || "Unknown";
-  const displayName = safeName.length > 14 ? safeName.substring(0, 13) + "." : safeName;
-  const displayTeam = safeTeam.length > 18 ? safeTeam.substring(0, 17) + "." : safeTeam;
-
-  return (
-    <group ref={cardRef}>
-      <mesh geometry={geometry} scale={[1.02, 1.02, 1.02]}>
-        <meshStandardMaterial color={new THREE.Color(colors.base).multiplyScalar(0.4)} metalness={0.6} roughness={0.3} />
-      </mesh>
-
-      <mesh geometry={geometry} material={baseMaterial} />
-
-      <mesh ref={imageRef} position={[0, 0.15, 0.08]}>
-        <planeGeometry args={[1.7, 2.0]} />
-        <meshStandardMaterial map={playerTexture} transparent opacity={0.92} />
-      </mesh>
-
-      <Text
-        position={[-0.82, 1.25, 0.09]}
-        fontSize={0.38}
-        anchorX="left"
-        anchorY="middle"
-        letterSpacing={-0.02}
-      >
-        <meshPhysicalMaterial metalness={1} roughness={0.2} color="#e0e0e0" />
-        {rating.toString()}
-      </Text>
-
-      <Text
-        position={[-0.82, 0.95, 0.09]}
-        fontSize={0.14}
-        anchorX="left"
-        anchorY="middle"
-        letterSpacing={0.12}
-      >
-        <meshPhysicalMaterial metalness={0.9} roughness={0.3} color={colors.textHex} />
-        {position}
-      </Text>
-
-      <Text
-        position={[0.82, 1.25, 0.09]}
-        fontSize={0.12}
-        anchorX="right"
-        anchorY="middle"
-        letterSpacing={0.08}
-      >
-        <meshPhysicalMaterial metalness={0.8} roughness={0.35} color="#999999" />
-        {serialText}
-      </Text>
-
-      <Text
-        position={[0.82, 1.05, 0.09]}
-        fontSize={0.11}
-        anchorX="right"
-        anchorY="middle"
-        letterSpacing={0.15}
-      >
-        <meshPhysicalMaterial metalness={0.9} roughness={0.3} color={colors.textHex} />
-        {rarityLabel}
-      </Text>
-
-      <Text
-        position={[0, -1.0, 0.09]}
-        fontSize={0.2}
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.08}
-        maxWidth={1.8}
-      >
-        <meshPhysicalMaterial metalness={1} roughness={0.15} color="#ffffff" />
-        {displayName.toUpperCase()}
-      </Text>
-
-      <Text
-        position={[0, -1.2, 0.09]}
-        fontSize={0.11}
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.1}
-        maxWidth={1.8}
-      >
-        <meshPhysicalMaterial metalness={0.8} roughness={0.3} color="#aaaaaa" />
-        {displayTeam.toUpperCase()}
-      </Text>
-
-      <Text
-        position={[-0.65, -1.38, 0.09]}
-        fontSize={0.11}
-        anchorX="left"
-        anchorY="middle"
-        letterSpacing={0.05}
-      >
-        <meshPhysicalMaterial metalness={0.9} roughness={0.25} color="#facc15" />
-        {`LV.${level}`}
-      </Text>
-
-      <Text
-        position={[0.65, -1.38, 0.09]}
-        fontSize={0.11}
-        anchorX="right"
-        anchorY="middle"
-        letterSpacing={0.05}
-      >
-        <meshPhysicalMaterial metalness={0.9} roughness={0.25} color={dsColor} />
-        {`DS ${decisiveScore}`}
-      </Text>
-
-      <mesh geometry={geometry} renderOrder={1}>
-        <primitive object={crystalMaterial} attach="material" />
-      </mesh>
-    </group>
-  );
-}
 
 function eplAssignRarity(player: EplPlayer): RarityKey {
   const rating = player.rating ? parseFloat(player.rating) : 0;
@@ -336,7 +82,6 @@ export function eplPlayerToCard(player: EplPlayer): PlayerCardWithPlayer {
   const rarity = eplAssignRarity(player);
   const goals = player.goals ?? 0;
   const assists = player.assists ?? 0;
-  const apps = player.appearances ?? 0;
   const rating = player.rating ? parseFloat(player.rating) : 0;
   const overall = Math.min(99, Math.round(60 + rating * 3 + goals * 0.5 + assists * 0.3));
   return {
@@ -388,16 +133,17 @@ export default function Card3D({
   sorareImageUrl,
 }: Card3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState({ x: -5, y: 0 });
   const [hovered, setHovered] = useState(false);
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
 
   const rarity = (card.rarity as RarityKey) || "common";
-  const colors = rarityColors[rarity];
+  const styles = rarityStyles[rarity];
 
   const sizeMap = {
-    sm: { w: 170, h: 250 },
-    md: { w: 220, h: 320 },
-    lg: { w: 270, h: 390 },
+    sm: { w: 170, h: 250, fontSize: 0.75 },
+    md: { w: 220, h: 320, fontSize: 1 },
+    lg: { w: 270, h: 390, fontSize: 1.2 },
   };
   const s = sizeMap[size];
 
@@ -409,16 +155,58 @@ export default function Card3D({
     ? `#${String(card.serialNumber).padStart(3, "0")}/${card.maxSupply}`
     : card.serialId || "";
 
+  const dsColor = (card.decisiveScore || 35) >= 80 ? "#4ade80" : (card.decisiveScore || 35) >= 60 ? "#facc15" : "#94a3b8";
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    mouseRef.current = { x, y };
+    setRotation({ x: -5 + y * 15, y: x * 15 });
+    setImageOffset({ x: x * 3, y: -y * 3 });
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    mouseRef.current = { x: 0, y: 0 };
+    setRotation({ x: -5, y: 0 });
+    setImageOffset({ x: 0, y: 0 });
+    setHovered(false);
+  }, []);
+
+  const playerName = card.player?.name || "Unknown";
+  const teamName = card.player?.team || "Unknown";
+  const position = card.player?.position || "N/A";
+  const rating = card.player?.overall || 0;
+  const level = card.level || 1;
+  const decisiveScore = card.decisiveScore || 35;
+
+  const voronoiSvg = useMemo(() => {
+    const points = Array.from({ length: 30 }, (_, i) => ({
+      x: ((i * 137.508) % 100),
+      y: ((i * 73.247 + 17) % 100),
+    }));
+    const paths = points.map((p, i) => {
+      const neighbors = points
+        .filter((_, j) => j !== i)
+        .sort((a, b) => {
+          const da = Math.hypot(a.x - p.x, a.y - p.y);
+          const db = Math.hypot(b.x - p.x, b.y - p.y);
+          return da - db;
+        })
+        .slice(0, 5);
+      const midpoints = neighbors.map(n => ({
+        x: (p.x + n.x) / 2,
+        y: (p.y + n.y) / 2,
+      }));
+      const center = {
+        x: midpoints.reduce((s, m) => s + m.x, 0) / midpoints.length,
+        y: midpoints.reduce((s, m) => s + m.y, 0) / midpoints.length,
+      };
+      const sorted = midpoints.sort((a, b) =>
+        Math.atan2(a.y - center.y, a.x - center.x) - Math.atan2(b.y - center.y, b.x - center.x)
+      );
+      return `M${sorted[0].x},${sorted[0].y} ${sorted.slice(1).map(m => `L${m.x},${m.y}`).join(" ")} Z`;
+    });
+    return paths;
   }, []);
 
   return (
@@ -427,51 +215,283 @@ export default function Card3D({
       style={{
         width: s.w,
         height: s.h,
-        position: "relative",
+        perspective: 800,
         cursor: selectable ? "pointer" : "default",
-        ...(selected ? {
-          outline: "3px solid hsl(250,85%,65%)",
-          outlineOffset: "3px",
-          borderRadius: 14,
-        } : {}),
       }}
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={(e) => { handleMouseLeave(); setHovered(false); }}
+      onMouseLeave={handleMouseLeave}
       data-testid={`player-card-${card.id}`}
     >
-      <Canvas
-        camera={{ position: [0, 0, 4.5], fov: 45 }}
+      <div
         style={{
           width: "100%",
           height: "100%",
+          position: "relative",
           borderRadius: 14,
-          pointerEvents: "none",
+          transformStyle: "preserve-3d",
+          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+          transition: hovered ? "transform 0.05s ease-out" : "transform 0.4s ease-out",
+          boxShadow: selected
+            ? `0 0 0 3px hsl(250,85%,65%), ${styles.glow}`
+            : styles.glow,
         }}
-        gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={3} />
-        <directionalLight position={[-3, 2, 4]} intensity={1} />
-        <pointLight position={[0, 0, 4]} intensity={0.5} />
-        <Suspense fallback={null}>
-          <CardMesh
-            rarity={rarity}
-            mouse={mouseRef}
-            playerImageUrl={imageUrl}
-            hovered={hovered}
-            playerName={card.player?.name || "Unknown"}
-            teamName={card.player?.team || "Unknown"}
-            position={card.player?.position || "N/A"}
-            rating={card.player?.overall || 0}
-            level={card.level || 1}
-            decisiveScore={card.decisiveScore || 35}
-            rarityLabel={colors.label}
-            serialText={serialText}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: 14,
+            background: styles.gradient,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3), inset 2px 0 4px rgba(255,255,255,0.1), inset -2px 0 4px rgba(0,0,0,0.1)`,
+              borderRadius: 14,
+              pointerEvents: "none",
+              zIndex: 10,
+            }}
           />
-        </Suspense>
-      </Canvas>
+
+          <div
+            style={{
+              position: "absolute",
+              top: "12%",
+              left: "50%",
+              transform: `translate(calc(-50% + ${imageOffset.x}px), ${imageOffset.y}px)`,
+              width: "78%",
+              height: "55%",
+              overflow: "hidden",
+              borderRadius: 8,
+              transition: hovered ? "transform 0.05s ease-out" : "transform 0.3s ease-out",
+            }}
+          >
+            <img
+              src={imageUrl}
+              alt={playerName}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "top center",
+                filter: "contrast(1.05) brightness(0.95)",
+              }}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallback) {
+                  img.dataset.fallback = "1";
+                  img.src = `/images/player-${imageIndex}.png`;
+                }
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%)",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              top: "4%",
+              left: "6%",
+              zIndex: 5,
+            }}
+          >
+            <div
+              style={{
+                fontSize: Math.round(28 * s.fontSize),
+                fontWeight: 900,
+                color: "#e0e0e0",
+                fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
+                lineHeight: 1,
+                textShadow: "0 1px 3px rgba(0,0,0,0.5)",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {rating}
+            </div>
+            <div
+              style={{
+                fontSize: Math.round(11 * s.fontSize),
+                fontWeight: 800,
+                color: styles.textColor,
+                fontFamily: "'Inter',system-ui,sans-serif",
+                letterSpacing: "0.15em",
+                marginTop: 2,
+                textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+              }}
+            >
+              {position}
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              top: "4%",
+              right: "6%",
+              textAlign: "right",
+              zIndex: 5,
+            }}
+          >
+            {serialText && (
+              <div
+                style={{
+                  fontSize: Math.round(9 * s.fontSize),
+                  fontWeight: 600,
+                  color: "#999999",
+                  fontFamily: "'Inter',monospace,system-ui",
+                  letterSpacing: "0.08em",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                }}
+              >
+                {serialText}
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: Math.round(8 * s.fontSize),
+                fontWeight: 800,
+                color: styles.textColor,
+                fontFamily: "'Inter',system-ui,sans-serif",
+                letterSpacing: "0.15em",
+                marginTop: 2,
+                textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+              }}
+            >
+              {styles.label}
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              bottom: "6%",
+              left: 0,
+              right: 0,
+              textAlign: "center",
+              zIndex: 5,
+              padding: "0 8%",
+            }}
+          >
+            <div
+              style={{
+                fontSize: Math.round(16 * s.fontSize),
+                fontWeight: 900,
+                color: "#ffffff",
+                fontFamily: "'Inter','Arial Black',system-ui,sans-serif",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                textShadow: "0 2px 4px rgba(0,0,0,0.6)",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {playerName}
+            </div>
+            <div
+              style={{
+                fontSize: Math.round(10 * s.fontSize),
+                fontWeight: 600,
+                color: "#aaaaaa",
+                fontFamily: "'Inter',system-ui,sans-serif",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                marginTop: 2,
+                textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {teamName}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: Math.round(16 * s.fontSize),
+                marginTop: Math.round(4 * s.fontSize),
+              }}
+            >
+              <span
+                style={{
+                  fontSize: Math.round(9 * s.fontSize),
+                  fontWeight: 800,
+                  color: "#facc15",
+                  fontFamily: "'Inter',system-ui,sans-serif",
+                  letterSpacing: "0.05em",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                }}
+              >
+                LV.{level}
+              </span>
+              <span
+                style={{
+                  fontSize: Math.round(9 * s.fontSize),
+                  fontWeight: 800,
+                  color: dsColor,
+                  fontFamily: "'Inter',system-ui,sans-serif",
+                  letterSpacing: "0.05em",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                }}
+              >
+                DS {decisiveScore}
+              </span>
+            </div>
+          </div>
+
+          <svg
+            viewBox="0 0 100 100"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0.08,
+              pointerEvents: "none",
+              zIndex: 4,
+            }}
+            preserveAspectRatio="none"
+          >
+            {voronoiSvg.map((d, i) => (
+              <path
+                key={i}
+                d={d}
+                fill="none"
+                stroke="white"
+                strokeWidth="0.3"
+              />
+            ))}
+          </svg>
+
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: 14,
+              background: hovered
+                ? `radial-gradient(circle at ${50 + rotation.y * 2}% ${50 - rotation.x * 2}%, rgba(255,255,255,0.15) 0%, transparent 60%)`
+                : "none",
+              pointerEvents: "none",
+              zIndex: 6,
+              transition: "background 0.1s ease-out",
+            }}
+          />
+        </div>
+      </div>
 
       {showPrice && card.forSale && (
         <div style={{

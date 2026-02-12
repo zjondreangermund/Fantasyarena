@@ -1,1 +1,1 @@
-export { default } from "./Card3D";
+<Card3D rarity={player.rarity} />

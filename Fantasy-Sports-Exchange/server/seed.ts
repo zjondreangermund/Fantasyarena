@@ -54,6 +54,7 @@ export async function seedDatabase() {
   const count = await storage.getPlayerCount();
   if (count > 0) {
     console.log(`Database already has ${count} players, skipping seed`);
+    await storage.backfillSerialIds();
     return;
   }
 
@@ -69,10 +70,12 @@ export async function seedDatabase() {
   for (const listing of marketplaceCards) {
     const player = createdPlayers[listing.playerIndex];
     if (player) {
+      const serialId = await storage.generateSerialId(player.id, player.name);
       await storage.createPlayerCard({
         playerId: player.id,
         ownerId: null,
         rarity: listing.rarity,
+        serialId,
         level: listing.level,
         xp: listing.level * 100,
         last5Scores: listing.scores,

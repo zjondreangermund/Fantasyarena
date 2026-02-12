@@ -1,5 +1,6 @@
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +23,7 @@ import {
   Trophy,
   Activity,
   LogOut,
+  Shield,
 } from "lucide-react";
 
 const menuItems = [
@@ -36,6 +38,13 @@ const menuItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { data: adminCheck } = useQuery<{ isAdmin: boolean }>({
+    queryKey: ["/api/admin/check"],
+  });
+
+  const allItems = adminCheck?.isAdmin
+    ? [...menuItems, { title: "Admin", href: "/admin", icon: Shield }]
+    : menuItems;
 
   return (
     <Sidebar>
@@ -56,7 +65,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {allItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

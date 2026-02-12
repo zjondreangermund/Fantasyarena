@@ -82,6 +82,18 @@ Preferred communication style: Simple, everyday language.
 - **Swap fees**: Split 50/50 between parties based on card price
 - **Common cards**: Cannot be listed on the marketplace
 
+### Financial Management System (Added Feb 2026)
+- **Escrow/Locked Balance**: Wallets have `lockedBalance` field for funds in transit (pending withdrawals, marketplace listings)
+- **Payment Methods**: Supports EFT, eWallet, Bank Transfer, Mobile Money with external transaction ID tracking
+- **Withdrawal Flow**: User requests withdrawal → funds locked (moved from balance to lockedBalance) → admin reviews → approve (deduct locked) or reject (return to balance)
+- **Card Serial IDs**: Immutable serial numbers (e.g., "HAA-001") using player name initials + incremental counter per player
+- **Admin Dashboard**: Available at `/admin` for reviewing and approving/rejecting pending withdrawals with bank details (IBAN/SWIFT) visibility
+- **Withdrawal Requests Table**: Stores bank details, eWallet info, status workflow (pending → processing → completed/rejected), admin notes
+
+**New Tables**: `withdrawal_requests`
+**New Enums**: `withdrawal_status`, `payment_method`
+**Updated Tables**: `wallets` (added `locked_balance`), `player_cards` (added `serial_id` unique), `transactions` (added `payment_method`, `external_transaction_id`)
+
 ### Build System
 - **Development**: `npm run dev` runs tsx with Vite dev server middleware (HMR enabled)
 - **Production Build**: `npm run build` runs `script/build.ts` which builds client with Vite and server with esbuild, outputting to `dist/`

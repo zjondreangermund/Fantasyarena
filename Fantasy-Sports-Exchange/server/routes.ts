@@ -14,8 +14,41 @@ function randomScores(): number[] {
   return Array.from({ length: 5 }, () => Math.floor(Math.random() * 80) + 10);
 }
 
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
+
+function isAdmin(req: any, res: any, next: any) {
+  if (!req.user || !req.user.claims) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const userId = req.user.claims.sub;
+  if (ADMIN_USER_IDS.length > 0 && !ADMIN_USER_IDS.includes(userId)) {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+}
+
 const depositSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
+  paymentMethod: z.enum(["eft", "ewallet", "bank_transfer", "mobile_money", "other"]).default("eft"),
+  externalTransactionId: z.string().optional(),
+});
+
+const withdrawalSchema = z.object({
+  amount: z.number().positive("Amount must be positive"),
+  paymentMethod: z.enum(["eft", "ewallet", "bank_transfer", "mobile_money"]),
+  bankName: z.string().optional(),
+  accountHolder: z.string().optional(),
+  accountNumber: z.string().optional(),
+  iban: z.string().optional(),
+  swiftCode: z.string().optional(),
+  ewalletProvider: z.string().optional(),
+  ewalletId: z.string().optional(),
+});
+
+const adminWithdrawalActionSchema = z.object({
+  id: z.number().int().positive(),
+  action: z.enum(["approve", "reject"]),
+  adminNotes: z.string().optional(),
 });
 
 const lineupSchema = z.object({
@@ -85,7 +118,7 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: parsed.error.issues[0]?.message || "Invalid input" });
       }
-      const { amount } = parsed.data;
+      const { amount, paymentMethod, externalTransactionId } = parsed.data;
 
       let wallet = await storage.getWallet(userId);
       if (!wallet) {
@@ -100,7 +133,9 @@ export async function registerRoutes(
         userId,
         type: "deposit",
         amount: netAmount,
-        description: `Deposited N$${amount.toFixed(2)} (N$${fee.toFixed(2)} fee)`,
+        description: `Deposited N$${amount.toFixed(2)} via ${paymentMethod.toUpperCase()} (N$${fee.toFixed(2)} fee)`,
+        paymentMethod,
+        externalTransactionId: externalTransactionId || null,
       });
 
       res.json({ ...updated, fee });
@@ -222,10 +257,12 @@ export async function registerRoutes(
 
         for (let i = 0; i < randomPlayers.length; i++) {
           const packIdx = Math.floor(i / 3);
+          const serialId = await storage.generateSerialId(randomPlayers[i].id, randomPlayers[i].name);
           const card = await storage.createPlayerCard({
             playerId: randomPlayers[i].id,
             ownerId: userId,
             rarity: "common",
+            serialId,
             level: 1,
             xp: 0,
             last5Scores: randomScores(),
@@ -687,6 +724,136 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting swap offers for card:", error);
       res.status(500).json({ message: "Failed to get swap offers" });
+    }
+  });
+
+  // Withdrawal request
+  app.post("/api/wallet/withdraw", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = withdrawalSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.issues[0]?.message || "Invalid input" });
+      }
+      const { amount, paymentMethod, bankName, accountHolder, accountNumber, iban, swiftCode, ewalletProvider, ewalletId } = parsed.data;
+
+      const wallet = await storage.getWallet(userId);
+      if (!wallet || wallet.balance < amount) {
+        return res.status(400).json({ message: "Insufficient available balance" });
+      }
+
+      const fee = +(amount * SITE_FEE_RATE).toFixed(2);
+      const netAmount = +(amount - fee).toFixed(2);
+
+      const locked = await storage.lockFunds(userId, amount);
+      if (!locked) {
+        return res.status(400).json({ message: "Insufficient available balance" });
+      }
+
+      const withdrawalRequest = await storage.createWithdrawalRequest({
+        userId,
+        amount,
+        fee,
+        netAmount,
+        paymentMethod,
+        bankName: bankName || null,
+        accountHolder: accountHolder || null,
+        accountNumber: accountNumber || null,
+        iban: iban || null,
+        swiftCode: swiftCode || null,
+        ewalletProvider: ewalletProvider || null,
+        ewalletId: ewalletId || null,
+      });
+
+      await storage.createTransaction({
+        userId,
+        type: "withdrawal",
+        amount: amount,
+        description: `Withdrawal request N$${amount.toFixed(2)} via ${paymentMethod.toUpperCase()} (N$${fee.toFixed(2)} fee) - Pending review`,
+        paymentMethod,
+      });
+
+      res.json(withdrawalRequest);
+    } catch (error) {
+      console.error("Error creating withdrawal:", error);
+      res.status(500).json({ message: "Failed to create withdrawal request" });
+    }
+  });
+
+  app.get("/api/wallet/withdrawals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const requests = await storage.getUserWithdrawalRequests(userId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error getting withdrawals:", error);
+      res.status(500).json({ message: "Failed to get withdrawal requests" });
+    }
+  });
+
+  app.get("/api/admin/check", isAuthenticated, async (req: any, res) => {
+    const userId = req.user.claims.sub;
+    const isAdminUser = ADMIN_USER_IDS.length === 0 || ADMIN_USER_IDS.includes(userId);
+    res.json({ isAdmin: isAdminUser });
+  });
+
+  // Admin routes
+  app.get("/api/admin/withdrawals", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const all = await storage.getAllWithdrawals();
+      res.json(all);
+    } catch (error) {
+      console.error("Error getting admin withdrawals:", error);
+      res.status(500).json({ message: "Failed to get withdrawals" });
+    }
+  });
+
+  app.get("/api/admin/withdrawals/pending", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const pending = await storage.getAllPendingWithdrawals();
+      res.json(pending);
+    } catch (error) {
+      console.error("Error getting pending withdrawals:", error);
+      res.status(500).json({ message: "Failed to get pending withdrawals" });
+    }
+  });
+
+  app.post("/api/admin/withdrawals/action", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const parsed = adminWithdrawalActionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.issues[0]?.message || "Invalid input" });
+      }
+      const { id, action, adminNotes } = parsed.data;
+
+      const allWds = await storage.getAllWithdrawals();
+      const wr = allWds.find(w => w.id === id);
+      if (!wr) return res.status(404).json({ message: "Withdrawal request not found" });
+
+      if (wr.status !== "pending" && wr.status !== "processing") {
+        return res.status(400).json({ message: "This withdrawal has already been processed" });
+      }
+
+      if (action === "approve") {
+        await storage.updateWithdrawalRequest(id, {
+          status: "completed",
+          adminNotes: adminNotes || "Approved",
+          reviewedAt: new Date(),
+        });
+        await storage.updateWalletLockedBalance(wr.userId, -wr.amount);
+      } else {
+        await storage.updateWithdrawalRequest(id, {
+          status: "rejected",
+          adminNotes: adminNotes || "Rejected",
+          reviewedAt: new Date(),
+        });
+        await storage.unlockFunds(wr.userId, wr.amount);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error processing withdrawal:", error);
+      res.status(500).json({ message: "Failed to process withdrawal" });
     }
   });
 

@@ -12,6 +12,8 @@ export const transactionTypeEnum = pgEnum("transaction_type", ["deposit", "withd
 export const competitionTierEnum = pgEnum("competition_tier", ["common", "rare"]);
 export const competitionStatusEnum = pgEnum("competition_status", ["open", "active", "completed"]);
 export const swapStatusEnum = pgEnum("swap_status", ["pending", "accepted", "rejected", "cancelled"]);
+export const withdrawalStatusEnum = pgEnum("withdrawal_status", ["pending", "processing", "completed", "rejected"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["eft", "ewallet", "bank_transfer", "mobile_money", "other"]);
 
 export const players = pgTable("players", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -30,6 +32,7 @@ export const playerCards = pgTable("player_cards", {
   playerId: integer("player_id").notNull().references(() => players.id),
   ownerId: varchar("owner_id").references(() => users.id),
   rarity: rarityEnum("rarity").notNull().default("common"),
+  serialId: text("serial_id").unique(),
   level: integer("level").notNull().default(1),
   xp: integer("xp").notNull().default(0),
   last5Scores: jsonb("last_5_scores").$type<number[]>().default([0, 0, 0, 0, 0]),
@@ -42,6 +45,7 @@ export const wallets = pgTable("wallets", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: varchar("user_id").notNull().references(() => users.id).unique(),
   balance: real("balance").notNull().default(0),
+  lockedBalance: real("locked_balance").notNull().default(0),
 });
 
 export const transactions = pgTable("transactions", {
@@ -50,6 +54,8 @@ export const transactions = pgTable("transactions", {
   type: transactionTypeEnum("type").notNull(),
   amount: real("amount").notNull(),
   description: text("description"),
+  paymentMethod: text("payment_method"),
+  externalTransactionId: text("external_transaction_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -103,6 +109,26 @@ export const swapOffers = pgTable("swap_offers", {
   topUpAmount: real("top_up_amount").default(0),
   topUpDirection: text("top_up_direction").default("none"),
   status: swapStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const withdrawalRequests = pgTable("withdrawal_requests", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  amount: real("amount").notNull(),
+  fee: real("fee").notNull().default(0),
+  netAmount: real("net_amount").notNull(),
+  paymentMethod: text("payment_method").notNull(),
+  bankName: text("bank_name"),
+  accountHolder: text("account_holder"),
+  accountNumber: text("account_number"),
+  iban: text("iban"),
+  swiftCode: text("swift_code"),
+  ewalletProvider: text("ewallet_provider"),
+  ewalletId: text("ewallet_id"),
+  status: withdrawalStatusEnum("status").notNull().default("pending"),
+  adminNotes: text("admin_notes"),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -235,6 +261,10 @@ export const swapOffersRelations = relations(swapOffers, ({ one }) => ({
   offerer: one(users, { fields: [swapOffers.offererUserId], references: [users.id] }),
 }));
 
+export const withdrawalRequestsRelations = relations(withdrawalRequests, ({ one }) => ({
+  user: one(users, { fields: [withdrawalRequests.userId], references: [users.id] }),
+}));
+
 export const insertPlayerSchema = createInsertSchema(players);
 export const insertPlayerCardSchema = createInsertSchema(playerCards);
 export const insertWalletSchema = createInsertSchema(wallets);
@@ -244,6 +274,7 @@ export const insertOnboardingSchema = createInsertSchema(userOnboarding);
 export const insertCompetitionSchema = createInsertSchema(competitions);
 export const insertCompetitionEntrySchema = createInsertSchema(competitionEntries);
 export const insertSwapOfferSchema = createInsertSchema(swapOffers);
+export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests);
 
 export type Player = typeof players.$inferSelect;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
@@ -263,6 +294,8 @@ export type CompetitionEntry = typeof competitionEntries.$inferSelect;
 export type InsertCompetitionEntry = z.infer<typeof insertCompetitionEntrySchema>;
 export type SwapOffer = typeof swapOffers.$inferSelect;
 export type InsertSwapOffer = z.infer<typeof insertSwapOfferSchema>;
+export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
+export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
 
 export type PlayerCardWithPlayer = PlayerCard & { player: Player };
 export type CompetitionWithEntries = Competition & { entries: CompetitionEntry[]; entryCount: number };

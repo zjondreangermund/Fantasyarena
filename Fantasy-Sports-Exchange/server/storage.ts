@@ -9,8 +9,9 @@ import {
   type Competition, type InsertCompetition,
   type CompetitionEntry, type InsertCompetitionEntry,
   type SwapOffer, type InsertSwapOffer,
+  type WithdrawalRequest, type InsertWithdrawalRequest,
   players, playerCards, wallets, transactions, lineups, userOnboarding,
-  competitions, competitionEntries, swapOffers,
+  competitions, competitionEntries, swapOffers, withdrawalRequests,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -30,6 +31,9 @@ export interface IStorage {
   getWallet(userId: string): Promise<Wallet | undefined>;
   createWallet(wallet: InsertWallet): Promise<Wallet>;
   updateWalletBalance(userId: string, amount: number): Promise<Wallet | undefined>;
+  updateWalletLockedBalance(userId: string, amount: number): Promise<Wallet | undefined>;
+  lockFunds(userId: string, amount: number): Promise<Wallet | undefined>;
+  unlockFunds(userId: string, amount: number): Promise<Wallet | undefined>;
 
   getTransactions(userId: string): Promise<Transaction[]>;
   createTransaction(tx: InsertTransaction): Promise<Transaction>;
@@ -60,6 +64,15 @@ export interface IStorage {
   getUserSwapOffers(userId: string): Promise<SwapOffer[]>;
   createSwapOffer(offer: InsertSwapOffer): Promise<SwapOffer>;
   updateSwapOffer(id: number, updates: Partial<SwapOffer>): Promise<SwapOffer | undefined>;
+
+  createWithdrawalRequest(req: InsertWithdrawalRequest): Promise<WithdrawalRequest>;
+  getUserWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]>;
+  getAllPendingWithdrawals(): Promise<WithdrawalRequest[]>;
+  getAllWithdrawals(): Promise<WithdrawalRequest[]>;
+  updateWithdrawalRequest(id: number, updates: Partial<WithdrawalRequest>): Promise<WithdrawalRequest | undefined>;
+
+  generateSerialId(playerId: number, playerName: string): Promise<string>;
+  backfillSerialIds(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -138,6 +151,39 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(wallets)
       .set({ balance: sql`${wallets.balance} + ${amount}` })
+      .where(eq(wallets.userId, userId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateWalletLockedBalance(userId: string, amount: number): Promise<Wallet | undefined> {
+    const [updated] = await db
+      .update(wallets)
+      .set({ lockedBalance: sql`${wallets.lockedBalance} + ${amount}` })
+      .where(eq(wallets.userId, userId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async lockFunds(userId: string, amount: number): Promise<Wallet | undefined> {
+    const [updated] = await db
+      .update(wallets)
+      .set({
+        balance: sql`${wallets.balance} - ${amount}`,
+        lockedBalance: sql`${wallets.lockedBalance} + ${amount}`,
+      })
+      .where(and(eq(wallets.userId, userId), sql`${wallets.balance} >= ${amount}`))
+      .returning();
+    return updated || undefined;
+  }
+
+  async unlockFunds(userId: string, amount: number): Promise<Wallet | undefined> {
+    const [updated] = await db
+      .update(wallets)
+      .set({
+        balance: sql`${wallets.balance} + ${amount}`,
+        lockedBalance: sql`${wallets.lockedBalance} - ${amount}`,
+      })
       .where(eq(wallets.userId, userId))
       .returning();
     return updated || undefined;
@@ -293,6 +339,81 @@ export class DatabaseStorage implements IStorage {
   async updateSwapOffer(id: number, updates: Partial<SwapOffer>): Promise<SwapOffer | undefined> {
     const [updated] = await db.update(swapOffers).set(updates as any).where(eq(swapOffers.id, id)).returning();
     return updated || undefined;
+  }
+
+  async createWithdrawalRequest(req: InsertWithdrawalRequest): Promise<WithdrawalRequest> {
+    const [created] = await db.insert(withdrawalRequests).values(req as any).returning();
+    return created;
+  }
+
+  async getUserWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]> {
+    return db.select().from(withdrawalRequests)
+      .where(eq(withdrawalRequests.userId, userId))
+      .orderBy(desc(withdrawalRequests.createdAt));
+  }
+
+  async getAllPendingWithdrawals(): Promise<WithdrawalRequest[]> {
+    return db.select().from(withdrawalRequests)
+      .where(sql`${withdrawalRequests.status} IN ('pending', 'processing')`)
+      .orderBy(desc(withdrawalRequests.createdAt));
+  }
+
+  async getAllWithdrawals(): Promise<WithdrawalRequest[]> {
+    return db.select().from(withdrawalRequests)
+      .orderBy(desc(withdrawalRequests.createdAt));
+  }
+
+  async updateWithdrawalRequest(id: number, updates: Partial<WithdrawalRequest>): Promise<WithdrawalRequest | undefined> {
+    const [updated] = await db.update(withdrawalRequests).set(updates as any).where(eq(withdrawalRequests.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async generateSerialId(playerId: number, playerName: string): Promise<string> {
+    const prefix = playerName
+      .split(" ")
+      .map(w => w.charAt(0).toUpperCase())
+      .join("")
+      .substring(0, 3)
+      .padEnd(3, "X");
+
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(playerCards)
+      .where(eq(playerCards.playerId, playerId));
+    const count = (result?.count || 0) + 1;
+    return `${prefix}-${String(count).padStart(3, "0")}`;
+  }
+
+  async backfillSerialIds(): Promise<void> {
+    const cards = await db.select().from(playerCards).where(sql`${playerCards.serialId} IS NULL`);
+    if (cards.length === 0) return;
+
+    const playerCounts: Record<number, number> = {};
+    const allCards = await db.select().from(playerCards).orderBy(playerCards.id);
+    const playerNames: Record<number, string> = {};
+
+    const allPlayers = await db.select().from(players);
+    for (const p of allPlayers) {
+      playerNames[p.id] = p.name;
+    }
+
+    for (const card of allCards) {
+      if (!playerCounts[card.playerId]) playerCounts[card.playerId] = 0;
+      playerCounts[card.playerId]++;
+
+      if (!card.serialId) {
+        const name = playerNames[card.playerId] || "UNK";
+        const prefix = name
+          .split(" ")
+          .map(w => w.charAt(0).toUpperCase())
+          .join("")
+          .substring(0, 3)
+          .padEnd(3, "X");
+        const serial = `${prefix}-${String(playerCounts[card.playerId]).padStart(3, "0")}`;
+        await db.update(playerCards).set({ serialId: serial } as any).where(eq(playerCards.id, card.id));
+      }
+    }
+    console.log(`Backfilled serial IDs for ${cards.length} cards`);
   }
 }
 

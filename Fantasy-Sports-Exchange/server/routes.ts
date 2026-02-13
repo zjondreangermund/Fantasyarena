@@ -52,14 +52,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Route to provide data to the Player Cards tab
+  // FIX: Updated to fetch actual Card Items so design templates (rarity) show up
   app.get("/api/players", async (_req, res) => {
     try {
-      const players = await storage.getPlayers();
-      res.json(players);
+      const cards = await storage.getMarketplaceListings();
+      res.json(cards);
     } catch (error: any) {
-      console.error("Failed to fetch players:", error);
-      res.status(500).json({ message: "Failed to fetch players" });
+      console.error("Failed to fetch player cards:", error);
+      res.status(500).json({ message: "Failed to fetch player cards" });
+    }
+  });
+
+  // Fetch cards owned by the logged-in user
+  app.get("/api/user/cards", async (req: any, res) => {
+    try {
+      const userId = req.user?.id || "54644807";
+      const cards = await storage.getUserCards(userId);
+      res.json(cards);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch user cards" });
     }
   });
 

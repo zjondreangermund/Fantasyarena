@@ -1,16 +1,17 @@
 import express, { type Express } from "express";
 import fs from "fs";
-import path, { dirname } from "path";
+import path from "path";
 import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-// Define __dirname manually for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+  // Go UP from /dist back to project root, then into dist (frontend)
+  const distPath = path.resolve(__dirname, "../");
 
-  if (!fs.existsSync(distPath)) {
+  if (!fs.existsSync(path.join(distPath, "index.html"))) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
@@ -18,9 +19,7 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // Fall through to index.html for SPA routing
-  // Use "*" for the catch-all route to ensure React Router works correctly
   app.get("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.join(distPath, "index.html"));
   });
 }

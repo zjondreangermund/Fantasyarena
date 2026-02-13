@@ -1,5 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+// Fixed: Go up one level to reach /components/ from /pages/
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import { Trophy, Users, TrendingUp, Star, Shield, Zap } from "lucide-react";
 
 export default function LandingPage() {

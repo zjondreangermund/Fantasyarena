@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import PlayerCard from "@/components/PlayerCard";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { type PlayerCardWithPlayer, type Lineup } from "@shared/schema";
+// Fixed: @/lib -> ../lib
+import { apiRequest, queryClient } from "../lib/queryClient";
+// Fixed: @/components -> ../components
+import PlayerCard from "../components/PlayerCard";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+// Fixed: @shared -> ../../../shared
+import { type PlayerCardWithPlayer, type Lineup } from "../../../shared/schema";
 import { Filter, Save, Check } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+// Fixed: @/hooks -> ../hooks
+import { useToast } from "../hooks/use-toast";
 
 export default function CollectionPage() {
   const { toast } = useToast();

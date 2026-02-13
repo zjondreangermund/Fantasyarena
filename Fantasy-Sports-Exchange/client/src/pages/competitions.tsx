@@ -1,24 +1,28 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import PlayerCard from "@/components/PlayerCard";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Fixed: @/lib -> ../lib
+import { apiRequest, queryClient } from "../lib/queryClient";
+// Fixed: @/components -> ../components
+import PlayerCard from "../components/PlayerCard";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+// Add this if you use the shared schema types:
+// import { type PlayerCardWithPlayer } from "../../../shared/schema";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { type PlayerCardWithPlayer, type Competition, type CompetitionEntry } from "@shared/schema";
+} from "../components/ui/dialog";
+import { type PlayerCardWithPlayer, type Competition, type CompetitionEntry } from "../../../shared/schema";
 import { Trophy, Users, Clock, DollarSign, Crown, Medal, ChevronDown, ChevronUp } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/auth-utils";
-import RewardPopup from "@/components/RewardPopup";
+import { useToast } from "../hooks/use-toast";
+import { isUnauthorizedError } from "../lib/auth-utils";
+import RewardPopup from "../components/RewardPopup";
 
 type EnrichedEntry = CompetitionEntry & { userName: string; userImage: string | null };
 type CompetitionWithEntries = Competition & { entries: EnrichedEntry[]; entryCount: number };

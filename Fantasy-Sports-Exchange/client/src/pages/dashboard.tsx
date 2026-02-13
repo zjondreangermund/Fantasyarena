@@ -1,12 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import PlayerCard from "@/components/PlayerCard";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { type PlayerCardWithPlayer, type Wallet, type Lineup } from "@shared/schema";
-import { Trophy, Wallet as WalletIcon, TrendingUp, Star, Package, ArrowLeftRight, Swords, Shield, Zap, ChevronUp, Percent, DollarSign } from "lucide-react";
+// Fixed: @/hooks -> ../hooks
+import { useAuth } from "../hooks/use-auth";
+// Fixed: @/components -> ../components
+import { AppSidebar } from "../components/app-sidebar"; 
+import PlayerCard from "../components/PlayerCard";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+// Fixed: @shared -> ../../../shared
+import { type PlayerCardWithPlayer, type Wallet, type Lineup } from "../../../shared/schema";
+import { 
+  Trophy, Wallet as WalletIcon, TrendingUp, Star, Package, 
+  ArrowLeftRight, Swords, Shield, Zap, ChevronUp, Percent, DollarSign 
+} from "lucide-react";
 import { Link } from "wouter";
 
 export default function DashboardPage() {

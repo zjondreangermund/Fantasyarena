@@ -1,4 +1,5 @@
-import { useToast } from "@/hooks/use-toast"
+// Fixed: Go up two levels to get out of /ui/ and /components/ to reach /hooks/
+import { useToast } from "../../hooks/use-toast";
 import {
   Toast,
   ToastClose,
@@ -6,7 +7,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "@/components/ui/toast"
+} from "./toast"; // Fixed: Neighboring file in the same /ui/ folder
 
 export function Toaster() {
   const { toasts } = useToast()

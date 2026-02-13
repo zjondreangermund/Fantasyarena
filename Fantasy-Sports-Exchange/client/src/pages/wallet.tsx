@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { type Wallet, type Transaction, type WithdrawalRequest } from "@shared/schema";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Skeleton } from "../components/ui/skeleton";
+import { Badge } from "../components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Label } from "../components/ui/label";
+import { type Wallet, type Transaction, type WithdrawalRequest } from "../../../shared/schema";
 import {
   Wallet as WalletIcon,
   ArrowDownCircle,
@@ -27,8 +27,8 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/auth-utils";
+import { useToast } from "../hooks/use-toast";
+import { isUnauthorizedError } from "../lib/auth-utils";
 
 export default function WalletPage() {
   const { toast } = useToast();

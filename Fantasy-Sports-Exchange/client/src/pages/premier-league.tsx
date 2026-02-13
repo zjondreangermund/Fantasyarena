@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,15 +14,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { type EplPlayer, type EplFixture, type EplInjury, type EplStanding } from "@shared/schema";
-import PlayerCard from "@/components/PlayerCard";
-import { eplPlayerToCard } from "@/components/Card3D";
+} from "../components/ui/table";
+import { type EplPlayer, type EplFixture, type EplInjury, type EplStanding } from "../../../shared/schema";
+import PlayerCard from "../components/PlayerCard";
+import { eplPlayerToCard } from "../components/Card3D";
 import {
   Trophy, Calendar, Users, AlertTriangle, Search, RefreshCw,
   Clock, CheckCircle, Activity,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 
 type CardRarity = "common" | "rare" | "unique" | "epic" | "legendary";
 

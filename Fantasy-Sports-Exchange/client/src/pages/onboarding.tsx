@@ -1,12 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
-import PlayerCard from "@/components/PlayerCard";
-import { type PlayerCardWithPlayer } from "@shared/schema";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { Button } from "../components/ui/button";
+import PlayerCard from "../components/PlayerCard";
+import { type PlayerCardWithPlayer } from "../../../shared/schema";
 import { Package, ChevronRight, ChevronLeft, Check, Sparkles, Shield, Swords, Target, Zap } from "lucide-react";
 import confetti from "canvas-confetti";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "../components/ui/skeleton";
 
 type OnboardingStep = "packs" | "select" | "lineup";
 

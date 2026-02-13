@@ -1,7 +1,9 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import PlayerCard from "@/components/PlayerCard";
+// Fixed: Since RewardPopup is in /components/, use ./ui/ to find the dialog
+import { Dialog, DialogContent } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+// Fixed: PlayerCard is a neighbor in the same /components/ folder
+import PlayerCard from "./PlayerCard";
 import { Trophy, Gift, DollarSign, Star } from "lucide-react";
 
 interface RewardPopupProps {

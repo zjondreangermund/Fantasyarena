@@ -1,30 +1,32 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import PlayerCard from "@/components/PlayerCard";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+// Fixed: @/lib -> ../lib
+import { apiRequest, queryClient } from "../lib/queryClient";
+// Fixed: @/components -> ../components
+import PlayerCard from "../components/PlayerCard";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Skeleton } from "../components/ui/skeleton";
+import { Badge } from "../components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { type PlayerCardWithPlayer, type Wallet, SITE_FEE_RATE } from "@shared/schema";
+} from "../components/ui/select";
+import { type PlayerCardWithPlayer, type Wallet, SITE_FEE_RATE } from "../../../shared/schema";
 import { Search, Filter, ShoppingCart, Tag, DollarSign, ArrowLeftRight, TrendingUp } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/auth-utils";
+import { useToast } from "../hooks/use-toast";
+import { isUnauthorizedError } from "../lib/auth-utils";
 
 export default function MarketplacePage() {
   const { toast } = useToast();

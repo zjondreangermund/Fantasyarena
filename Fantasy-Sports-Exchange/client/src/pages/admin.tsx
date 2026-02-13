@@ -1,12 +1,15 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type WithdrawalRequest } from "@shared/schema";
+// Fixed: @/lib -> ../lib
+import { apiRequest, queryClient } from "../lib/queryClient";
+// Fixed: @/components -> ../components
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { Input } from "../components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+// Fixed: @shared -> ../../../shared
+import { type WithdrawalRequest } from "../../../shared/schema";
 import {
   Shield,
   CheckCircle2,
@@ -19,8 +22,8 @@ import {
   Send,
 } from "lucide-react";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/auth-utils";
+import { useToast } from "../hooks/use-toast";
+import { isUnauthorizedError } from "../lib/auth-utils";
 
 export default function AdminPage() {
   const { toast } = useToast();

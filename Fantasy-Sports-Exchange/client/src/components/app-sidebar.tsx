@@ -1,5 +1,6 @@
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+// Fixed alias: @/hooks -> ../hooks
+import { useAuth } from "../hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
@@ -12,9 +13,9 @@ import {
   SidebarMenuItem,
   SidebarFooter,
   SidebarHeader,
-} from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+} from "./ui/sidebar"; // Fixed alias: @/components/ui -> ./ui
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
 import {
   LayoutDashboard,
   Library,
@@ -38,6 +39,8 @@ const menuItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+
+  // This query checks your Admin ID (50198883) via the backend
   const { data: adminCheck } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/check"],
   });

@@ -1,24 +1,25 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeProvider, ThemeToggle } from "@/components/ThemeProvider";
-import { useAuth } from "@/hooks/use-auth";
+// Fixed aliases: @/ -> ./ for files in the same or deeper subdirectories
+import { Toaster } from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
+import { AppSidebar } from "./components/app-sidebar";
+import { ThemeProvider, ThemeToggle } from "./components/ThemeProvider";
+import { useAuth } from "./hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@/components/ui/skeleton";
-import NotFound from "@/pages/not-found";
-import LandingPage from "@/pages/landing";
-import OnboardingPage from "@/pages/onboarding";
-import DashboardPage from "@/pages/dashboard";
-import CollectionPage from "@/pages/collection";
-import MarketplacePage from "@/pages/marketplace";
-import WalletPage from "@/pages/wallet";
-import CompetitionsPage from "@/pages/competitions";
-import PremierLeaguePage from "@/pages/premier-league";
-import AdminPage from "@/pages/admin";
+import { Skeleton } from "./components/ui/skeleton";
+import NotFound from "./pages/not-found";
+import LandingPage from "./pages/landing";
+import OnboardingPage from "./pages/onboarding";
+import DashboardPage from "./pages/dashboard";
+import CollectionPage from "./pages/collection";
+import MarketplacePage from "./pages/marketplace";
+import WalletPage from "./pages/wallet";
+import CompetitionsPage from "./pages/competitions";
+import PremierLeaguePage from "./pages/premier-league";
+import AdminPage from "./pages/admin";
 
 function AuthenticatedRouter() {
   const { data: onboarding, isLoading } = useQuery<{

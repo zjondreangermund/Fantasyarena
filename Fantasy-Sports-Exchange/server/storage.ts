@@ -189,9 +189,9 @@ export class DatabaseStorage implements IStorage {
       .update(wallets)
       .set({
         balance: sql`${wallets.balance} - ${amount}`,
-        lockedBalance: sql`${wallets.lockedBalance} + ${amount}`,
+        lockedBalance: sql`${wallets.lockedBalance} + ${amount}`
       })
-      .where(and(eq(wallets.userId, userId), sql`${wallets.balance} >= ${amount}`))
+      .where(eq(wallets.userId, userId))
       .returning();
     return updated || undefined;
   }
@@ -201,7 +201,7 @@ export class DatabaseStorage implements IStorage {
       .update(wallets)
       .set({
         balance: sql`${wallets.balance} + ${amount}`,
-        lockedBalance: sql`${wallets.lockedBalance} - ${amount}`,
+        lockedBalance: sql`${wallets.lockedBalance} - ${amount}`
       })
       .where(eq(wallets.userId, userId))
       .returning();
@@ -209,12 +209,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTransactions(userId: string): Promise<Transaction[]> {
-    const results = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.userId, userId))
-      .orderBy(sql`${transactions.createdAt} DESC`);
-    return results;
+    return db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.timestamp));
   }
 
   async createTransaction(tx: InsertTransaction): Promise<Transaction> {
@@ -228,27 +223,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrUpdateLineup(userId: string, cardIds: number[], captainId: number): Promise<Lineup> {
-    const existing = await this.getLineup(userId);
+    const [existing] = await db.select().from(lineups).where(eq(lineups.userId, userId));
     if (existing) {
-      const [updated] = await db
-        .update(lineups)
-        .set({ cardIds, captainId } as any)
-        .where(eq(lineups.userId, userId))
-        .returning();
+      const [updated] = await db.update(lineups).set({ cardIds, captainId, updatedAt: new Date() }).where(eq(lineups.id, existing.id)).returning();
       return updated;
     }
-    const [created] = await db
-      .insert(lineups)
-      .values({ userId, cardIds, captainId } as any)
-      .returning();
+    const [created] = await db.insert(lineups).values({ userId, cardIds, captainId } as any).returning();
     return created;
   }
 
   async getOnboarding(userId: string): Promise<UserOnboarding | undefined> {
-    const [o] = await db
-      .select()
-      .from(userOnboarding)
-      .where(eq(userOnboarding.userId, userId));
+    const [o] = await db.select().from(userOnboarding).where(eq(userOnboarding.userId, userId));
     return o || undefined;
   }
 
@@ -258,40 +243,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOnboarding(userId: string, updates: Partial<UserOnboarding>): Promise<UserOnboarding | undefined> {
-    const [updated] = await db
-      .update(userOnboarding)
-      .set(updates)
-      .where(eq(userOnboarding.userId, userId))
-      .returning();
+    const [updated] = await db.update(userOnboarding).set(updates).where(eq(userOnboarding.userId, userId)).returning();
     return updated || undefined;
   }
 
   async getPlayerCount(): Promise<number> {
-    const [result] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(players);
-    return result?.count || 0;
+    const [result] = await db.select({ count: sql<number>`count(*)` }).from(players);
+    return result.count;
   }
 
   async getRandomPlayers(count: number): Promise<Player[]> {
-    return db
-      .select()
-      .from(players)
-      .orderBy(sql`RANDOM()`)
-      .limit(count);
+    return db.select().from(players).orderBy(sql`RANDOM()`).limit(count);
   }
 
   async getRandomPlayersByPosition(position: string, count: number): Promise<Player[]> {
-    return db
-      .select()
-      .from(players)
-      .where(eq(players.position, position as any))
-      .orderBy(sql`RANDOM()`)
-      .limit(count);
+    return db.select().from(players).where(eq(players.position, position)).orderBy(sql`RANDOM()`).limit(count);
   }
 
   async getCompetitions(): Promise<Competition[]> {
-    return db.select().from(competitions).orderBy(desc(competitions.createdAt));
+    return db.select().from(competitions).orderBy(desc(competitions.startTime));
   }
 
   async getCompetition(id: number): Promise<Competition | undefined> {
@@ -305,19 +275,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompetition(id: number, updates: Partial<Competition>): Promise<Competition | undefined> {
-    const [updated] = await db.update(competitions).set(updates as any).where(eq(competitions.id, id)).returning();
+    const [updated] = await db.update(competitions).set(updates).where(eq(competitions.id, id)).returning();
     return updated || undefined;
   }
 
   async getCompetitionEntries(competitionId: number): Promise<CompetitionEntry[]> {
-    return db.select().from(competitionEntries)
-      .where(eq(competitionEntries.competitionId, competitionId))
-      .orderBy(desc(competitionEntries.totalScore));
+    return db.select().from(competitionEntries).where(eq(competitionEntries.competitionId, competitionId));
   }
 
   async getCompetitionEntry(competitionId: number, userId: string): Promise<CompetitionEntry | undefined> {
-    const [entry] = await db.select().from(competitionEntries)
-      .where(and(eq(competitionEntries.competitionId, competitionId), eq(competitionEntries.userId, userId)));
+    const [entry] = await db.select().from(competitionEntries).where(and(eq(competitionEntries.competitionId, competitionId), eq(competitionEntries.userId, userId)));
     return entry || undefined;
   }
 
@@ -327,7 +294,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompetitionEntry(id: number, updates: Partial<CompetitionEntry>): Promise<CompetitionEntry | undefined> {
-    const [updated] = await db.update(competitionEntries).set(updates as any).where(eq(competitionEntries.id, id)).returning();
+    const [updated] = await db.update(competitionEntries).set(updates).where(eq(competitionEntries.id, id)).returning();
     return updated || undefined;
   }
 
@@ -336,11 +303,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserRewards(userId: string): Promise<CompetitionEntry[]> {
-    return db.select().from(competitionEntries)
-      .where(and(
-        eq(competitionEntries.userId, userId),
-        sql`(${competitionEntries.prizeAmount} > 0 OR ${competitionEntries.prizeCardId} IS NOT NULL)`
-      ));
+    return db.select().from(competitionEntries).where(and(eq(competitionEntries.userId, userId), sql`${competitionEntries.rewardAmount} > 0`));
   }
 
   async getSwapOffer(id: number): Promise<SwapOffer | undefined> {
@@ -349,14 +312,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSwapOffersForCard(cardId: number): Promise<SwapOffer[]> {
-    return db.select().from(swapOffers)
-      .where(and(eq(swapOffers.requestedCardId, cardId), eq(swapOffers.status, "pending")));
+    return db.select().from(swapOffers).where(eq(swapOffers.offeredCardId, cardId));
   }
 
   async getUserSwapOffers(userId: string): Promise<SwapOffer[]> {
-    return db.select().from(swapOffers)
-      .where(sql`(${swapOffers.offererUserId} = ${userId} OR ${swapOffers.receiverUserId} = ${userId})`)
-      .orderBy(desc(swapOffers.createdAt));
+    return db.select().from(swapOffers).where(eq(swapOffers.senderId, userId));
   }
 
   async createSwapOffer(offer: InsertSwapOffer): Promise<SwapOffer> {
@@ -365,7 +325,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSwapOffer(id: number, updates: Partial<SwapOffer>): Promise<SwapOffer | undefined> {
-    const [updated] = await db.update(swapOffers).set(updates as any).where(eq(swapOffers.id, id)).returning();
+    const [updated] = await db.update(swapOffers).set(updates).where(eq(swapOffers.id, id)).returning();
     return updated || undefined;
   }
 
@@ -375,93 +335,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]> {
-    return db.select().from(withdrawalRequests)
-      .where(eq(withdrawalRequests.userId, userId))
-      .orderBy(desc(withdrawalRequests.createdAt));
+    return db.select().from(withdrawalRequests).where(eq(withdrawalRequests.userId, userId));
   }
 
   async getAllPendingWithdrawals(): Promise<WithdrawalRequest[]> {
-    return db.select().from(withdrawalRequests)
-      .where(sql`${withdrawalRequests.status} IN ('pending', 'processing')`)
-      .orderBy(desc(withdrawalRequests.createdAt));
+    return db.select().from(withdrawalRequests).where(eq(withdrawalRequests.status, "pending"));
   }
 
   async getAllWithdrawals(): Promise<WithdrawalRequest[]> {
-    return db.select().from(withdrawalRequests)
-      .orderBy(desc(withdrawalRequests.createdAt));
+    return db.select().from(withdrawalRequests).orderBy(desc(withdrawalRequests.createdAt));
   }
 
   async updateWithdrawalRequest(id: number, updates: Partial<WithdrawalRequest>): Promise<WithdrawalRequest | undefined> {
-    const [updated] = await db.update(withdrawalRequests).set(updates as any).where(eq(withdrawalRequests.id, id)).returning();
+    const [updated] = await db.update(withdrawalRequests).set(updates).where(eq(withdrawalRequests.id, id)).returning();
     return updated || undefined;
   }
 
-  async generateSerialId(playerId: number, playerName: string, rarity?: string): Promise<{ serialId: string; serialNumber: number; maxSupply: number }> {
-    const prefix = playerName
-      .split(" ")
-      .map(w => w.charAt(0).toUpperCase())
-      .join("")
-      .substring(0, 3)
-      .padEnd(3, "X");
-
-    const [result] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(playerCards)
-      .where(eq(playerCards.playerId, playerId));
-    const serialNumber = (result?.count || 0) + 1;
-    const maxSupply = RARITY_SUPPLY[rarity || "common"] || 0;
-    return {
-      serialId: `${prefix}-${String(serialNumber).padStart(3, "0")}`,
-      serialNumber,
-      maxSupply,
-    };
+  async generateSerialId(playerId: number, playerName: string, rarity: string = "common"): Promise<{ serialId: string; serialNumber: number; maxSupply: number }> {
+    const maxSupply = RARITY_SUPPLY[rarity] || 0;
+    const currentCount = await this.getSupplyCount(playerId, rarity);
+    const nextNumber = currentCount + 1;
+    const initials = playerName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 3);
+    const serialId = `${initials}-${rarity[0].toUpperCase()}-${nextNumber.toString().padStart(4, '0')}`;
+    return { serialId, serialNumber: nextNumber, maxSupply };
   }
 
   async getSupplyCount(playerId: number, rarity: string): Promise<number> {
-    const [result] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(playerCards)
-      .where(and(eq(playerCards.playerId, playerId), sql`${playerCards.rarity} = ${rarity}`));
-    return result?.count || 0;
+    const [result] = await db.select({ count: sql<number>`count(*)` }).from(playerCards).where(and(eq(playerCards.playerId, playerId), eq(playerCards.rarity, rarity)));
+    return result.count;
   }
 
   async backfillSerialIds(): Promise<void> {
-    const cards = await db.select().from(playerCards).where(sql`${playerCards.serialId} IS NULL OR ${playerCards.serialNumber} IS NULL OR ${playerCards.decisiveScore} IS NULL`);
-    if (cards.length === 0) return;
-
-    const playerCounts: Record<number, number> = {};
-    const allCards = await db.select().from(playerCards).orderBy(playerCards.id);
-    const playerNames: Record<number, string> = {};
-
-    const allPlayers = await db.select().from(players);
-    for (const p of allPlayers) {
-      playerNames[p.id] = p.name;
-    }
-
+    const allCards = await db.select().from(playerCards);
     for (const card of allCards) {
-      if (!playerCounts[card.playerId]) playerCounts[card.playerId] = 0;
-      playerCounts[card.playerId]++;
-
-      if (!card.serialId || card.serialNumber === null || card.serialNumber === undefined || card.decisiveScore === null || card.decisiveScore === undefined) {
-        const name = playerNames[card.playerId] || "UNK";
-        const prefix = name
-          .split(" ")
-          .map(w => w.charAt(0).toUpperCase())
-          .join("")
-          .substring(0, 3)
-          .padEnd(3, "X");
-        const serial = `${prefix}-${String(playerCounts[card.playerId]).padStart(3, "0")}`;
-        const maxSupply = RARITY_SUPPLY[card.rarity] || 0;
-        const decisiveScore = Math.min(100, 35 + (card.level || 1) * 13);
-        await db.update(playerCards).set({
-          serialId: serial,
-          serialNumber: playerCounts[card.playerId],
-          maxSupply: maxSupply,
-          decisiveScore: card.decisiveScore ?? decisiveScore,
-        } as any).where(eq(playerCards.id, card.id));
+      if (!card.serialId && card.playerId) {
+        const [player] = await db.select().from(players).where(eq(players.id, card.playerId));
+        if (player) {
+          const { serialId, serialNumber } = await this.generateSerialId(player.id, player.name, card.rarity || "common");
+          await db.update(playerCards).set({ serialId, serialNumber }).where(eq(playerCards.id, card.id));
+        }
       }
     }
-    console.log(`Backfilled serial IDs for ${cards.length} cards`);
   }
 }
 

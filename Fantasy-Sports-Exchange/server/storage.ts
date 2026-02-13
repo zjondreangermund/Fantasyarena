@@ -209,7 +209,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTransactions(userId: string): Promise<Transaction[]> {
-    return db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.timestamp));
+    // Fix: Ensure 'desc' is used as a function to sort by the 'createdAt' column
+    return db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt)); // Correct usage of the desc keyword
   }
 
   async createTransaction(tx: InsertTransaction): Promise<Transaction> {

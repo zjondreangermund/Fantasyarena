@@ -10,14 +10,18 @@ import {
   type CompetitionEntry, type InsertCompetitionEntry,
   type SwapOffer, type InsertSwapOffer,
   type WithdrawalRequest, type InsertWithdrawalRequest,
+  type UserTradeHistory, type InsertUserTradeHistory,
+  type MarketplaceTrade, type InsertMarketplaceTrade,
+  type Notification, type InsertNotification,
   type User,
   players, playerCards, wallets, transactions, lineups, userOnboarding,
   competitions, competitionEntries, swapOffers, withdrawalRequests,
+  userTradeHistory, marketplaceTrades, notifications,
   users,
   RARITY_SUPPLY,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, gte } from "drizzle-orm";
 
 export interface IStorage {
   getUser(userId: string): Promise<User | undefined>;
@@ -75,6 +79,18 @@ export interface IStorage {
   getAllPendingWithdrawals(): Promise<WithdrawalRequest[]>;
   getAllWithdrawals(): Promise<WithdrawalRequest[]>;
   updateWithdrawalRequest(id: number, updates: Partial<WithdrawalRequest>): Promise<WithdrawalRequest | undefined>;
+
+  getUserTradeHistory(userId: string, hours: number): Promise<UserTradeHistory[]>;
+  createUserTradeHistory(trade: InsertUserTradeHistory): Promise<UserTradeHistory>;
+
+  createMarketplaceTrade(trade: InsertMarketplaceTrade): Promise<MarketplaceTrade>;
+  getMarketplaceTrades(limit?: number): Promise<MarketplaceTrade[]>;
+
+  getNotifications(userId: string): Promise<Notification[]>;
+  getUnreadNotifications(userId: string): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  updateNotification(id: number, updates: Partial<Notification>): Promise<Notification | undefined>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
 
   generateSerialId(playerId: number, playerName: string, rarity?: string): Promise<{ serialId: string; serialNumber: number; maxSupply: number }>;
   getSupplyCount(playerId: number, rarity: string): Promise<number>;
@@ -381,6 +397,80 @@ export class DatabaseStorage implements IStorage {
         }
       }
     }
+  }
+
+  // User Trade History methods
+  async getUserTradeHistory(userId: string, hours: number): Promise<UserTradeHistory[]> {
+    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+    return db
+      .select()
+      .from(userTradeHistory)
+      .where(
+        and(
+          eq(userTradeHistory.userId, userId),
+          gte(userTradeHistory.timestamp, cutoffTime)
+        )
+      )
+      .orderBy(desc(userTradeHistory.timestamp));
+  }
+
+  async createUserTradeHistory(trade: InsertUserTradeHistory): Promise<UserTradeHistory> {
+    const [created] = await db.insert(userTradeHistory).values(trade as any).returning();
+    return created;
+  }
+
+  // Marketplace Trade methods
+  async createMarketplaceTrade(trade: InsertMarketplaceTrade): Promise<MarketplaceTrade> {
+    const [created] = await db.insert(marketplaceTrades).values(trade as any).returning();
+    return created;
+  }
+
+  async getMarketplaceTrades(limit: number = 100): Promise<MarketplaceTrade[]> {
+    return db
+      .select()
+      .from(marketplaceTrades)
+      .orderBy(desc(marketplaceTrades.timestamp))
+      .limit(limit);
+  }
+
+  // Notification methods
+  async getNotifications(userId: string): Promise<Notification[]> {
+    return db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getUnreadNotifications(userId: string): Promise<Notification[]> {
+    return db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      )
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [created] = await db.insert(notifications).values(notification as any).returning();
+    return created;
+  }
+
+  async updateNotification(id: number, updates: Partial<Notification>): Promise<Notification | undefined> {
+    const [updated] = await db
+      .update(notifications)
+      .set(updates)
+      .where(eq(notifications.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    return this.updateNotification(id, { isRead: true });
   }
 }
 

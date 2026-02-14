@@ -14,6 +14,8 @@ export const competitionStatusEnum = pgEnum("competition_status", ["open", "acti
 export const swapStatusEnum = pgEnum("swap_status", ["pending", "accepted", "rejected", "cancelled"]);
 export const withdrawalStatusEnum = pgEnum("withdrawal_status", ["pending", "processing", "completed", "rejected"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["eft", "ewallet", "bank_transfer", "mobile_money", "other"]);
+export const tradeTypeEnum = pgEnum("trade_type", ["sell", "buy", "swap"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["reward", "prize", "trade", "competition", "system"]);
 
 export const players = pgTable("players", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -34,6 +36,46 @@ export const RARITY_SUPPLY: Record<string, number> = {
   epic: 10,
   legendary: 5,
 };
+
+// XP Scoring Constants - Real-world performance to XP mapping
+export const XP_SCORING = {
+  GOAL: 100,
+  ASSIST: 60,
+  APPEARANCE: 30,
+  CLEAN_SHEET: 50,
+  PENALTY_SAVE: 80,
+  YELLOW_CARD: -10,
+  RED_CARD: -20,
+  OWN_GOAL: -20,
+  ERROR_LEADING_TO_GOAL: -15,
+  PER_10_MINUTES: 1,
+} as const;
+
+// Stat Multiplier per Rarity - Applied to displayed stats (not XP gain)
+export const STAT_MULTIPLIERS: Record<string, number> = {
+  common: 1.0,
+  rare: 1.1,
+  unique: 1.2,
+  epic: 1.35,
+  legendary: 1.5,
+};
+
+// Marketplace Price Limits per Rarity (in currency units)
+export const PRICE_LIMITS: Record<string, { min: number; max: number }> = {
+  common: { min: 1, max: 50 },
+  rare: { min: 5, max: 500 },
+  unique: { min: 50, max: 5000 },
+  epic: { min: 200, max: 20000 },
+  legendary: { min: 1000, max: 100000 },
+};
+
+// Trade Rate Limiting Constants (per 24-hour rolling window)
+export const TRADE_LIMITS = {
+  MAX_SELLS_PER_DAY: 5,
+  MAX_BUYS_PER_DAY: 10,
+  MAX_SWAPS_PER_DAY: 10,
+  WINDOW_HOURS: 24,
+} as const;
 
 export const DECISIVE_LEVELS: { level: number; points: number }[] = [
   { level: 0, points: 35 },
@@ -63,6 +105,7 @@ export const playerCards = pgTable("player_cards", {
   xp: integer("xp").notNull().default(0),
   decisiveScore: integer("decisive_score").default(35),
   last5Scores: jsonb("last_5_scores").$type<number[]>().default([0, 0, 0, 0, 0]),
+  statMultiplier: real("stat_multiplier").notNull().default(1.0),
   forSale: boolean("for_sale").notNull().default(false),
   price: real("price").default(0),
   acquiredAt: timestamp("acquired_at").defaultNow(),
@@ -157,6 +200,39 @@ export const withdrawalRequests = pgTable("withdrawal_requests", {
   adminNotes: text("admin_notes"),
   reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Trade History - Track trades per user per day for rate limiting
+export const userTradeHistory = pgTable("user_trade_history", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  tradeType: tradeTypeEnum("trade_type").notNull(),
+  cardId: integer("card_id").references(() => playerCards.id),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+// Marketplace Trades - Store all trades with timestamps
+export const marketplaceTrades = pgTable("marketplace_trades", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  sellerId: varchar("seller_id").notNull().references(() => users.id),
+  buyerId: varchar("buyer_id").references(() => users.id),
+  cardId: integer("card_id").notNull().references(() => playerCards.id),
+  price: real("price").notNull(),
+  tradeType: tradeTypeEnum("trade_type").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+// Notifications - Inbox system for rewards and prizes
+export const notifications = pgTable("notifications", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  cardId: integer("card_id").references(() => playerCards.id),
+  amount: real("amount"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const SITE_FEE_RATE = 0.08;
@@ -292,6 +368,18 @@ export const withdrawalRequestsRelations = relations(withdrawalRequests, ({ one 
   user: one(users, { fields: [withdrawalRequests.userId], references: [users.id] }),
 }));
 
+export const userTradeHistoryRelations = relations(userTradeHistory, ({ one }) => ({
+  user: one(users, { fields: [userTradeHistory.userId], references: [users.id] }),
+}));
+
+export const marketplaceTradesRelations = relations(marketplaceTrades, ({ one }) => ({
+  seller: one(users, { fields: [marketplaceTrades.sellerId], references: [users.id] }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
 export const insertPlayerSchema = createInsertSchema(players);
 export const insertPlayerCardSchema = createInsertSchema(playerCards);
 export const insertWalletSchema = createInsertSchema(wallets);
@@ -302,6 +390,9 @@ export const insertCompetitionSchema = createInsertSchema(competitions);
 export const insertCompetitionEntrySchema = createInsertSchema(competitionEntries);
 export const insertSwapOfferSchema = createInsertSchema(swapOffers);
 export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests);
+export const insertUserTradeHistorySchema = createInsertSchema(userTradeHistory);
+export const insertMarketplaceTradeSchema = createInsertSchema(marketplaceTrades);
+export const insertNotificationSchema = createInsertSchema(notifications);
 
 export type Player = typeof players.$inferSelect;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
@@ -323,6 +414,12 @@ export type SwapOffer = typeof swapOffers.$inferSelect;
 export type InsertSwapOffer = z.infer<typeof insertSwapOfferSchema>;
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
+export type UserTradeHistory = typeof userTradeHistory.$inferSelect;
+export type InsertUserTradeHistory = z.infer<typeof insertUserTradeHistorySchema>;
+export type MarketplaceTrade = typeof marketplaceTrades.$inferSelect;
+export type InsertMarketplaceTrade = z.infer<typeof insertMarketplaceTradeSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type PlayerCardWithPlayer = PlayerCard & { player: Player };
 export type CompetitionWithEntries = Competition & { entries: CompetitionEntry[]; entryCount: number };
@@ -331,3 +428,130 @@ export type EplPlayer = typeof eplPlayers.$inferSelect;
 export type EplFixture = typeof eplFixtures.$inferSelect;
 export type EplInjury = typeof eplInjuries.$inferSelect;
 export type EplStanding = typeof eplStandings.$inferSelect;
+
+// Validation Functions
+
+/**
+ * Calculate XP from real-world player stats
+ */
+export function calculateXPFromStats(stats: {
+  goals?: number;
+  assists?: number;
+  appearances?: number;
+  cleanSheets?: number;
+  penaltySaves?: number;
+  yellowCards?: number;
+  redCards?: number;
+  ownGoals?: number;
+  errorsLeadingToGoal?: number;
+  minutes?: number;
+}): number {
+  let xp = 0;
+  
+  xp += (stats.goals ?? 0) * XP_SCORING.GOAL;
+  xp += (stats.assists ?? 0) * XP_SCORING.ASSIST;
+  xp += (stats.appearances ?? 0) * XP_SCORING.APPEARANCE;
+  xp += (stats.cleanSheets ?? 0) * XP_SCORING.CLEAN_SHEET;
+  xp += (stats.penaltySaves ?? 0) * XP_SCORING.PENALTY_SAVE;
+  xp += (stats.yellowCards ?? 0) * XP_SCORING.YELLOW_CARD;
+  xp += (stats.redCards ?? 0) * XP_SCORING.RED_CARD;
+  xp += (stats.ownGoals ?? 0) * XP_SCORING.OWN_GOAL;
+  xp += (stats.errorsLeadingToGoal ?? 0) * XP_SCORING.ERROR_LEADING_TO_GOAL;
+  xp += Math.floor((stats.minutes ?? 0) / 10) * XP_SCORING.PER_10_MINUTES;
+  
+  return Math.max(0, xp);
+}
+
+/**
+ * Apply stat multiplier based on rarity to base stats
+ */
+export function applyStatMultiplier(baseStats: {
+  pac?: number;
+  sho?: number;
+  pas?: number;
+  def?: number;
+  phy?: number;
+}, rarity: string): {
+  pac: number;
+  sho: number;
+  pas: number;
+  def: number;
+  phy: number;
+} {
+  const multiplier = STAT_MULTIPLIERS[rarity] ?? 1.0;
+  
+  return {
+    pac: Math.round((baseStats.pac ?? 0) * multiplier),
+    sho: Math.round((baseStats.sho ?? 0) * multiplier),
+    pas: Math.round((baseStats.pas ?? 0) * multiplier),
+    def: Math.round((baseStats.def ?? 0) * multiplier),
+    phy: Math.round((baseStats.phy ?? 0) * multiplier),
+  };
+}
+
+/**
+ * Validate marketplace listing price against rarity limits
+ */
+export function validateMarketplacePrice(price: number, rarity: string): { valid: boolean; error?: string } {
+  const limits = PRICE_LIMITS[rarity];
+  
+  if (!limits) {
+    return { valid: false, error: `Invalid rarity: ${rarity}` };
+  }
+  
+  if (price < limits.min) {
+    return { valid: false, error: `Price must be at least ${limits.min} for ${rarity} cards` };
+  }
+  
+  if (price > limits.max) {
+    return { valid: false, error: `Price cannot exceed ${limits.max} for ${rarity} cards` };
+  }
+  
+  return { valid: true };
+}
+
+/**
+ * Check if user has exceeded trade rate limits
+ * Returns trade history counts for the last 24 hours
+ */
+export function checkTradeRateLimitFromHistory(tradeHistory: UserTradeHistory[]): {
+  canSell: boolean;
+  canBuy: boolean;
+  canSwap: boolean;
+  sellCount: number;
+  buyCount: number;
+  swapCount: number;
+  nextResetTime: Date;
+} {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - TRADE_LIMITS.WINDOW_HOURS * 60 * 60 * 1000);
+  
+  // Filter trades within the last 24 hours
+  const recentTrades = tradeHistory.filter(trade => 
+    trade.timestamp >= windowStart
+  );
+  
+  const sellCount = recentTrades.filter(t => t.tradeType === 'sell').length;
+  const buyCount = recentTrades.filter(t => t.tradeType === 'buy').length;
+  const swapCount = recentTrades.filter(t => t.tradeType === 'swap').length;
+  
+  // Find the earliest trade timestamp to calculate next reset
+  const earliestTrade = recentTrades.reduce((earliest, trade) => 
+    !earliest || trade.timestamp < earliest ? trade.timestamp : earliest,
+    null as Date | null
+  );
+  
+  const nextResetTime = earliestTrade 
+    ? new Date(earliestTrade.getTime() + TRADE_LIMITS.WINDOW_HOURS * 60 * 60 * 1000)
+    : now;
+  
+  return {
+    canSell: sellCount < TRADE_LIMITS.MAX_SELLS_PER_DAY,
+    canBuy: buyCount < TRADE_LIMITS.MAX_BUYS_PER_DAY,
+    canSwap: swapCount < TRADE_LIMITS.MAX_SWAPS_PER_DAY,
+    sellCount,
+    buyCount,
+    swapCount,
+    nextResetTime,
+  };
+}

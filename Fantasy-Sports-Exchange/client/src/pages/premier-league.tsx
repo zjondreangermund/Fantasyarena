@@ -17,7 +17,7 @@ import {
 } from "../components/ui/table";
 import { type EplPlayer, type EplFixture, type EplInjury, type EplStanding } from "../../../shared/schema";
 import PlayerCard from "../components/PlayerCard";
-import { eplPlayerToCard } from "../components/Card3D";
+import { eplPlayerToCard } from "../components/threeplayercards";
 import {
   Trophy, Calendar, Users, AlertTriangle, Search, RefreshCw,
   Clock, CheckCircle, Activity,

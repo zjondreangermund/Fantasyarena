@@ -4,13 +4,13 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev": "NODE_ENV=development tsx Fantasy-Sports-Exchange/server/index.ts",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
-    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws --external:connect-pg-simple --external:express-session",
+    "build:client": "cd Fantasy-Sports-Exchange && vite build",
+    "build:server": "cd Fantasy-Sports-Exchange && esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=../dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws --external:connect-pg-simple --external:express-session --external:./vite",
     "start": "NODE_ENV=production node dist/index.cjs",
-    "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "check": "cd Fantasy-Sports-Exchange && tsc --noEmit",
+    "db:push": "cd Fantasy-Sports-Exchange && drizzle-kit push"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

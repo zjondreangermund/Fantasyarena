@@ -13,14 +13,15 @@ export type Rarity = "Common" | "Rare" | "Unique" | "Epic" | "Legendary";
  * Apply rarity multiplier to a single stat value
  * @param stat - The base stat value
  * @param rarity - The card rarity
- * @returns The scaled stat value
+ * @returns The scaled stat value (rounded to 1 decimal place)
  */
 export function applyRarityMultiplier(stat: number, rarity: string): number {
   // Normalize rarity to match STAT_MULTIPLIERS keys (capitalize first letter)
   const normalizedRarity = rarity.charAt(0).toUpperCase() + rarity.slice(1).toLowerCase();
   const multiplier = STAT_MULTIPLIERS[normalizedRarity as Rarity] || 1.0;
   
-  return Math.round(stat * multiplier * 10) / 10; // Round to 1 decimal place
+  // Use toFixed for reliable rounding to 1 decimal place
+  return parseFloat((stat * multiplier).toFixed(1));
 }
 
 /**

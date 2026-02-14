@@ -39,6 +39,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // --- API ROUTES ---
 
+  // Middleware to ensure user is authenticated
+  function requireAuth(req: any, res: any, next: any) {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    next();
+  }
+
   // Sync Data Route
   app.post("/api/epl/sync", async (_req, res) => {
     try {
@@ -64,9 +72,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Fetch cards owned by the logged-in user
-  app.get("/api/user/cards", async (req: any, res) => {
+  app.get("/api/user/cards", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.id || "54644807";
+      const userId = req.user.id;
       const cards = await storage.getUserCards(userId);
       res.json(cards);
     } catch (error: any) {
@@ -91,9 +99,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   const { listCardForSale, buyCard, cancelListing } = await import("./services/marketplace");
 
   // List card for sale
-  app.post("/api/marketplace/sell", async (req: any, res) => {
+  app.post("/api/marketplace/sell", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.id || "54644807";
+      const userId = req.user.id;
       const { cardId, price } = req.body;
 
       if (!cardId || !price) {
@@ -114,9 +122,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Buy card from marketplace
-  app.post("/api/marketplace/buy", async (req: any, res) => {
+  app.post("/api/marketplace/buy", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.id || "54644807";
+      const userId = req.user.id;
       const { cardId } = req.body;
 
       if (!cardId) {
@@ -141,9 +149,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Cancel listing
-  app.post("/api/marketplace/cancel", async (req: any, res) => {
+  app.post("/api/marketplace/cancel", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.id || "54644807";
+      const userId = req.user.id;
       const { cardId } = req.body;
 
       if (!cardId) {
@@ -208,9 +216,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   const { eq, desc } = await import("drizzle-orm");
 
   // Get user notifications
-  app.get("/api/notifications", async (req: any, res) => {
+  app.get("/api/notifications", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.id || "54644807";
+      const userId = req.user.id;
 
       const userNotifications = await db
         .select()
@@ -243,9 +251,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Mark all notifications as read
-  app.post("/api/notifications/read-all", async (req: any, res) => {
+  app.post("/api/notifications/read-all", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.id || "54644807";
+      const userId = req.user.id;
 
       await db
         .update(notifications)

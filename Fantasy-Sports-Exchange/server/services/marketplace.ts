@@ -10,7 +10,7 @@
 
 import { db } from "../db";
 import { playerCards, userTradeHistory, marketplaceTrades, wallets } from "@shared/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte, sql, inArray } from "drizzle-orm";
 import type { Rarity } from "./statScaling";
 
 export const SITE_FEE_RATE = 0.08;
@@ -78,7 +78,7 @@ export async function checkBuySwapRateLimit(userId: string): Promise<boolean> {
     .where(
       and(
         eq(userTradeHistory.userId, userId),
-        sql`${userTradeHistory.tradeType} IN ('buy', 'swap')`,
+        inArray(userTradeHistory.tradeType, ["buy", "swap"]),
         gte(userTradeHistory.createdAt, twentyFourHoursAgo)
       )
     );

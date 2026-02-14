@@ -18,7 +18,7 @@ import {
   players,
   transactions
 } from "@shared/schema";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, inArray } from "drizzle-orm";
 
 interface LineupValidation {
   valid: boolean;
@@ -42,7 +42,7 @@ export async function validateLineup(cardIds: number[]): Promise<LineupValidatio
     })
     .from(playerCards)
     .innerJoin(players, eq(playerCards.playerId, players.id))
-    .where(sql`${playerCards.id} IN ${cardIds}`);
+    .where(inArray(playerCards.id, cardIds));
 
   if (cards.length !== 5) {
     return { valid: false, message: "Some cards not found" };
@@ -83,7 +83,7 @@ export async function calculateLineupScore(cardIds: number[]): Promise<number> {
       decisiveScore: playerCards.decisiveScore,
     })
     .from(playerCards)
-    .where(sql`${playerCards.id} IN ${cardIds}`);
+    .where(inArray(playerCards.id, cardIds));
 
   return cards.reduce((total, card) => total + (card.decisiveScore || 0), 0);
 }

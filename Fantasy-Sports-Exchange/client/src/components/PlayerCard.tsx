@@ -1,5 +1,5 @@
-import PlayerCard from "./threeplayercards";
-import { type PlayerCardWithPlayer } from "@shared/schema";
+import ThreeDPlayerCard from "./threeplayercards";
+import { type PlayerCardWithPlayer } from "../../../shared/schema";
 
 interface PlayerCardProps {
   card: PlayerCardWithPlayer;
@@ -12,5 +12,13 @@ interface PlayerCardProps {
 }
 
 export default function PlayerCard(props: PlayerCardProps) {
-  return <Card3D {...props} />;
+  // Use the name you imported from threeplayercards
+  return (
+    <div 
+      onClick={props.onClick} 
+      className={`${props.selectable ? 'cursor-pointer' : ''} ${props.selected ? 'ring-2 ring-primary rounded-xl' : ''}`}
+    >
+      <ThreeDPlayerCard card={props.card} />
+    </div>
+  );
 }

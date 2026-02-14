@@ -1,1 +1,11 @@
-{\n  "name": "my-root-project",\n  "private": true,\n  "scripts": {\n    "build": "npm run build --workspace=Fantasy-Sports-Exchange",\n    "start": "npm start --workspace=Fantasy-Sports-Exchange",\n    "dev": "npm run dev --workspace=Fantasy-Sports-Exchange"\n  }\n}
+{
+  "name": "your-package-name",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd Fantasy-Sports-Exchange && npm run build:client && npm run build:server",
+    "start": "cd Fantasy-Sports-Exchange && NODE_ENV=production node dist/index.cjs"
+  },
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {}
+}

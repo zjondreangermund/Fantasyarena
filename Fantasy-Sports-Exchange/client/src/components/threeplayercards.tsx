@@ -1,154 +1,91 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Ultra 3D Card</title>
-  <style>
-    body { margin:0; overflow:hidden; background:#0b0e14; }
-    canvas { display:block; }
-  </style>
-</head>
-<body>
+import React, { useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Float, Environment, PerspectiveCamera, ContactShadows } from "@react-three/drei";
+import * as THREE from "three";
+import { type PlayerCardWithPlayer } from "../../../shared/schema";
 
-<script type="module">
-
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js";
-import { RGBELoader } from "https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/loaders/RGBELoader.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/controls/OrbitControls.js";
-
-// Scene
-const scene = new THREE.Scene();
-
-// Camera
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
-camera.position.set(0,0,5);
-
-// Renderer
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.physicallyCorrectLights = true;
-document.body.appendChild(renderer.domElement);
-
-// Lighting
-const light = new THREE.DirectionalLight(0xffffff, 3);
-light.position.set(5,5,5);
-scene.add(light);
-
-const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-scene.add(ambient);
-
-// Environment reflection
-new RGBELoader()
-.load("https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr", function(texture){
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  scene.environment = texture;
-});
-
-// Card Geometry (extruded rounded rectangle)
-const shape = new THREE.Shape();
-const width = 2;
-const height = 3;
-const radius = 0.25;
-
-shape.moveTo(-width/2 + radius, -height/2);
-shape.lineTo(width/2 - radius, -height/2);
-shape.quadraticCurveTo(width/2, -height/2, width/2, -height/2 + radius);
-shape.lineTo(width/2, height/2 - radius);
-shape.quadraticCurveTo(width/2, height/2, width/2 - radius, height/2);
-shape.lineTo(-width/2 + radius, height/2);
-shape.quadraticCurveTo(-width/2, height/2, -width/2, height/2 - radius);
-shape.lineTo(-width/2, -height/2 + radius);
-shape.quadraticCurveTo(-width/2, -height/2, -width/2 + radius, -height/2);
-
-const geometry = new THREE.ExtrudeGeometry(shape, {
-  depth: 0.15,
-  bevelEnabled: true,
-  bevelThickness: 0.05,
-  bevelSize: 0.05,
-  bevelSegments: 8
-});
-
-geometry.center();
-
-// Metallic base material
-const baseMaterial = new THREE.MeshPhysicalMaterial({
-  color: 0x1a1f2e,
-  metalness: 1.0,
-  roughness: 0.25,
-  clearcoat: 1.0,
-  clearcoatRoughness: 0.1,
-  envMapIntensity: 1.5
-});
-
-// Holographic shader overlay
-const holoMaterial = new THREE.ShaderMaterial({
-  uniforms: {
-    time: { value: 0 },
-  },
-  transparent: true,
-  vertexShader: `
-    varying vec2 vUv;
-    void main(){
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+// This is your Holographic Shader translated for React
+const HoloMaterial = () => {
+  const materialRef = useRef<any>();
+  
+  useFrame((state) => {
+    if (materialRef.current) {
+      materialRef.current.uniforms.time.value = state.clock.elapsedTime * 0.5;
     }
-  `,
-  fragmentShader: `
-    uniform float time;
-    varying vec2 vUv;
+  });
 
-    float noise(vec2 p){
-      return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
-    }
+  const shaderData = useMemo(() => ({
+    uniforms: { time: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform float time;
+      varying vec2 vUv;
+      void main() {
+        float shine = sin((vUv.x + time) * 15.0) * 0.5 + 0.5;
+        vec3 rainbow = vec3(
+          sin(time + vUv.x * 5.0) * 0.5 + 0.5,
+          sin(time + vUv.y * 5.0 + 2.0) * 0.5 + 0.5,
+          sin(time + vUv.x * 5.0 + 4.0) * 0.5 + 0.5
+        );
+        gl_FragColor = vec4(rainbow * shine, 0.35);
+      }`
+  }), []);
 
-    void main(){
-      float shine = sin((vUv.x + time)*15.0) * 0.5 + 0.5;
-      vec3 rainbow = vec3(
-        sin(time + vUv.x*5.0)*0.5+0.5,
-        sin(time + vUv.y*5.0 + 2.0)*0.5+0.5,
-        sin(time + vUv.x*5.0 + 4.0)*0.5+0.5
-      );
-      float grain = noise(vUv * 200.0) * 0.1;
+  return <shaderMaterial ref={materialRef} args={[shaderData]} transparent />;
+};
 
-      gl_FragColor = vec4(rainbow * shine + grain, 0.35);
-    }
-  `
-});
+export default function ThreeDPlayerCard({ card }: { card: PlayerCardWithPlayer }) {
+  // Create the rounded card shape once
+  const cardShape = useMemo(() => {
+    const shape = new THREE.Shape();
+    const w = 2, h = 3, r = 0.2;
+    shape.moveTo(-w/2 + r, -h/2);
+    shape.lineTo(w/2 - r, -h/2);
+    shape.quadraticCurveTo(w/2, -h/2, w/2, -h/2 + r);
+    shape.lineTo(w/2, h/2 - r);
+    shape.quadraticCurveTo(w/2, h/2, w/2 - r, h/2);
+    shape.lineTo(-w/2 + r, h/2);
+    shape.quadraticCurveTo(-w/2, h/2, -w/2, h/2 - r);
+    shape.lineTo(-w/2, -h/2 + r);
+    shape.quadraticCurveTo(-w/2, -h/2, -w/2 + r, -h/2);
+    return shape;
+  }, []);
 
-const card = new THREE.Mesh(geometry, baseMaterial);
-scene.add(card);
+  return (
+    <div className="w-full h-full min-h-[300px] cursor-pointer">
+      <Canvas castShadow>
+        <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+        <Environment preset="city" />
+        <ambientLight intensity={0.5} />
+        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
 
-const holoMesh = new THREE.Mesh(geometry, holoMaterial);
-scene.add(holoMesh);
-
-// Mouse tracking parallax
-window.addEventListener("mousemove", (event)=>{
-  const x = (event.clientX / window.innerWidth) * 2 - 1;
-  const y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  card.rotation.y = x * 0.4;
-  card.rotation.x = y * 0.4;
-
-  holoMesh.rotation.copy(card.rotation);
-});
-
-// Animation loop
-function animate(){
-  requestAnimationFrame(animate);
-  holoMaterial.uniforms.time.value += 0.02;
-  renderer.render(scene, camera);
+        <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+          <group>
+            {/* The Main Card Body */}
+            <mesh castShadow>
+              <extrudeGeometry args={[cardShape, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.05 }]} />
+              <meshPhysicalMaterial 
+                color={card.rarity === 'legendary' ? '#ffd700' : '#1a1f2e'} 
+                metalness={1} 
+                roughness={0.2} 
+                clearcoat={1} 
+              />
+            </mesh>
+            {/* The Holographic Overlay */}
+            <mesh position={[0, 0, 0.06]}>
+              <extrudeGeometry args={[cardShape, { depth: 0.01, bevelEnabled: false }]} />
+              <HoloMaterial />
+            </mesh>
+          </group>
+        </Float>
+        
+        <ContactShadows position={[0, -2, 0]} opacity={0.5} scale={10} blur={2.5} far={4} />
+      </Canvas>
+    </div>
+  );
 }
-animate();
-
-// Resize
-window.addEventListener("resize", ()=>{
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-</script>
-</body>
-</html>

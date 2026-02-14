@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 // Fixed: @/lib -> ../lib
 import { apiRequest, queryClient } from "../lib/queryClient";
 // Fixed: @/components -> ../components
-import PlayerCard from "../components/PlayerCard";
+import PlayerCard from "../components/threeplayercards";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";

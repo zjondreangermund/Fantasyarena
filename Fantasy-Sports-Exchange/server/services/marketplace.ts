@@ -143,6 +143,8 @@ export async function logMarketplaceTrade(
     });
   } catch (error) {
     console.error('Error logging marketplace trade:', error);
+    // Log to monitoring/metrics system if available
+    // TODO: Add monitoring alert for failed trade logging
     // Don't throw - logging should not block trades
   }
 }

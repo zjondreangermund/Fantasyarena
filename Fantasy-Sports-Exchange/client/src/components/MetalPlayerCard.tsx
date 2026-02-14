@@ -111,6 +111,8 @@ const RainbowMaterial = () => {
   return <shaderMaterial ref={materialRef} args={[shaderData]} />;
 };
 
+const DEFAULT_OVERALL_RATING = 85;
+
 // Card mesh component
 function CardMesh({ card, hovered }: { card: PlayerCardWithPlayer; hovered: boolean }) {
   const meshRef = useRef<THREE.Group>(null);
@@ -253,7 +255,7 @@ function CardMesh({ card, hovered }: { card: PlayerCardWithPlayer; hovered: bool
         anchorY="middle"
         fontWeight={900}
       >
-        {card.player.overall || '85'}
+        {card.player.overall || DEFAULT_OVERALL_RATING}
       </Text>
 
       {/* Level indicator */}

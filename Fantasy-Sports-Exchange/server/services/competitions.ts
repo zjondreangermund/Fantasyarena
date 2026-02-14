@@ -223,6 +223,17 @@ export async function settleCompetition(competitionId: number): Promise<{
             cardId: prizeCard.id,
             isRead: false,
           });
+        } else {
+          // No players available for prize card - notify user about currency prize only
+          console.error('No players available for prize card');
+          await storage.createNotification({
+            userId: prize.userId,
+            type: 'prize',
+            title: `${competition.name} - 1st Place!`,
+            message: `Congratulations! You won N$${prize.prizeAmount.toFixed(2)}! (Prize card unavailable)`,
+            amount: prize.prizeAmount,
+            isRead: false,
+          });
         }
       }
       

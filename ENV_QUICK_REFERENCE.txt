@@ -1,0 +1,93 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                  FANTASYARENA ENVIRONMENT VARIABLES             │
+│                        Quick Reference Card                      │
+└─────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+  REQUIRED VARIABLES
+═══════════════════════════════════════════════════════════════════
+
+DATABASE_URL
+  ├─ What: PostgreSQL connection string
+  ├─ Local: postgresql://postgres:password@localhost:5432/fantasyarena
+  ├─ Railway: Auto-set by PostgreSQL service
+  └─ Example: postgresql://user:pass@host:5432/dbname
+
+NODE_ENV
+  ├─ What: Environment mode
+  ├─ Options: development | production
+  └─ Local: development
+      Railway: production
+
+═══════════════════════════════════════════════════════════════════
+  OPTIONAL VARIABLES
+═══════════════════════════════════════════════════════════════════
+
+PORT
+  ├─ What: Server port
+  ├─ Default: 5000
+  └─ Railway: Auto-set
+
+API_FOOTBALL_KEY
+  ├─ What: Live EPL data API key
+  ├─ Without: Uses mock data (works fine!)
+  └─ Get at: https://www.api-football.com/
+
+ADMIN_USER_IDS
+  ├─ What: Admin access user IDs
+  ├─ Format: Comma-separated
+  └─ Example: 54644807,12345678
+
+═══════════════════════════════════════════════════════════════════
+  QUICK SETUP
+═══════════════════════════════════════════════════════════════════
+
+LOCAL DEVELOPMENT:
+  1. cp .env.example .env
+  2. Edit .env:
+     DATABASE_URL=postgresql://localhost:5432/fantasyarena
+     NODE_ENV=development
+  3. docker run -d -p 5432:5432 -e POSTGRES_DB=fantasyarena postgres:15
+  4. npm run db:push
+  5. npm run dev
+
+RAILWAY DEPLOYMENT:
+  1. Add PostgreSQL service (auto-sets DATABASE_URL)
+  2. Add variable: NODE_ENV=production
+  3. Deploy!
+
+═══════════════════════════════════════════════════════════════════
+  VALIDATION
+═══════════════════════════════════════════════════════════════════
+
+✓ npm run dev          → Should start without errors
+✓ npm run db:push      → Should create tables
+✓ http://localhost:5000 → Should load app
+
+═══════════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════
+
+Error: "DATABASE_URL must be set"
+  → Add DATABASE_URL to .env file
+
+Error: "ECONNREFUSED"
+  → Start PostgreSQL: docker run ... postgres:15
+
+Error: "Port 5000 already in use"
+  → Change PORT=3000 in .env
+
+═══════════════════════════════════════════════════════════════════
+  SECURITY
+═══════════════════════════════════════════════════════════════════
+
+✓ .env is in .gitignore (never commit it!)
+✓ Use strong passwords
+✓ Keep API keys secret
+✗ Never expose DATABASE_URL publicly
+
+═══════════════════════════════════════════════════════════════════
+
+For detailed guide: cat ENVIRONMENT_VARIABLES.md
+For full setup: cat README.md
+For quick deploy: cat QUICKSTART.md

@@ -1,11 +1,8 @@
-{
-  "name": "your-package-name",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "cd Fantasy-Sports-Exchange && npm run build:client && npm run build:server",
-    "start": "cd Fantasy-Sports-Exchange && NODE_ENV=production node dist/index.cjs"
-  },
-  "main": "index.js",
-  "dependencies": {},
-  "devDependencies": {}
+"scripts": {
+  "dev": "NODE_ENV=development tsx server/index.ts",
+  "build:client": "vite build",
+  "build:server": "esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws",
+  "start": "NODE_ENV=production node dist/index.cjs",
+  "check": "tsc",
+  "db:push": "drizzle-kit push"
 }

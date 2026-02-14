@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "../lib/queryClient";
 // IMPORT YOUR 3D CARD COMPONENT HERE
-import { PlayerCard as ThreePlayerCard } from "../components/3DCard"; 
+import { PlayerCard as ThreePlayerCard } from "../components/threeplayercards"; 
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";

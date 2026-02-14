@@ -3,6 +3,8 @@ import { type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { seedDatabase, seedCompetitions } from "./seed";
+import { fetchLeagueStandings, fetchPlayerScores, fetchInjuryUpdates } from "./services/fantasyLeagueApi";
+import { applyMultipliersToCards } from "./services/statScaling";
 
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
 
@@ -56,7 +58,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/players", async (_req, res) => {
     try {
       const cards = await storage.getMarketplaceListings();
-      res.json(cards);
+      // Apply rarity multipliers to card stats
+      const scaledCards = applyMultipliersToCards(cards);
+      res.json(scaledCards);
     } catch (error: any) {
       console.error("Failed to fetch player cards:", error);
       res.status(500).json({ message: "Failed to fetch player cards" });
@@ -68,7 +72,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const userId = req.user?.id || "54644807";
       const cards = await storage.getUserCards(userId);
-      res.json(cards);
+      // Apply rarity multipliers to card stats
+      const scaledCards = applyMultipliersToCards(cards);
+      res.json(scaledCards);
     } catch (error: any) {
       res.status(500).json({ message: "Failed to fetch user cards" });
     }
@@ -83,6 +89,41 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error("Error fetching player:", error);
       res.status(500).json({ message: "Error fetching player" });
+    }
+  });
+
+  // --- FANTASY LEAGUE API ROUTES ---
+
+  // Get live league standings
+  app.get("/api/fantasy/standings", async (_req, res) => {
+    try {
+      const standings = await fetchLeagueStandings();
+      res.json(standings);
+    } catch (error: any) {
+      console.error("Error fetching fantasy standings:", error);
+      res.status(500).json({ message: "Failed to fetch league standings", error: error.message });
+    }
+  });
+
+  // Get live player performance scores
+  app.get("/api/fantasy/scores", async (_req, res) => {
+    try {
+      const scores = await fetchPlayerScores();
+      res.json(scores);
+    } catch (error: any) {
+      console.error("Error fetching player scores:", error);
+      res.status(500).json({ message: "Failed to fetch player scores", error: error.message });
+    }
+  });
+
+  // Get injury and suspension updates
+  app.get("/api/fantasy/injuries", async (_req, res) => {
+    try {
+      const injuries = await fetchInjuryUpdates();
+      res.json(injuries);
+    } catch (error: any) {
+      console.error("Error fetching injury updates:", error);
+      res.status(500).json({ message: "Failed to fetch injury updates", error: error.message });
     }
   });
 

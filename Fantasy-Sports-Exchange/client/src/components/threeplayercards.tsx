@@ -89,3 +89,14 @@ export default function ThreeDPlayerCard({ card }: { card: PlayerCardWithPlayer 
     </div>
   );
 }
+export const eplPlayerToCard = (player: any): any => {
+  return {
+    id: player.id,
+    rarity: "common", // or logic to determine rarity
+    player: {
+      name: player.name,
+      position: player.position,
+      image: player.photo
+    }
+  };
+}

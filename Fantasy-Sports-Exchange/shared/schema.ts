@@ -159,6 +159,44 @@ export const withdrawalRequests = pgTable("withdrawal_requests", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Notifications table for user notifications
+export const notificationTypeEnum = pgEnum("notification_type", ["reward", "prize", "trade", "system"]);
+
+export const notifications = pgTable("notifications", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  amount: real("amount").default(0),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User trade history for rate limiting
+export const tradeTypeEnum = pgEnum("trade_type", ["sell", "buy", "swap"]);
+
+export const userTradeHistory = pgTable("user_trade_history", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  tradeType: tradeTypeEnum("trade_type").notNull(),
+  cardId: integer("card_id").references(() => playerCards.id),
+  amount: real("amount").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Marketplace trades for audit logging
+export const marketplaceTrades = pgTable("marketplace_trades", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  sellerId: varchar("seller_id").notNull().references(() => users.id),
+  buyerId: varchar("buyer_id").notNull().references(() => users.id),
+  cardId: integer("card_id").notNull().references(() => playerCards.id),
+  price: real("price").notNull(),
+  fee: real("fee").notNull(),
+  totalAmount: real("total_amount").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const SITE_FEE_RATE = 0.08;
 
 export const eplPlayers = pgTable("epl_players", {
@@ -292,6 +330,21 @@ export const withdrawalRequestsRelations = relations(withdrawalRequests, ({ one 
   user: one(users, { fields: [withdrawalRequests.userId], references: [users.id] }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+export const userTradeHistoryRelations = relations(userTradeHistory, ({ one }) => ({
+  user: one(users, { fields: [userTradeHistory.userId], references: [users.id] }),
+  card: one(playerCards, { fields: [userTradeHistory.cardId], references: [playerCards.id] }),
+}));
+
+export const marketplaceTradesRelations = relations(marketplaceTrades, ({ one }) => ({
+  seller: one(users, { fields: [marketplaceTrades.sellerId], references: [users.id] }),
+  buyer: one(users, { fields: [marketplaceTrades.buyerId], references: [users.id] }),
+  card: one(playerCards, { fields: [marketplaceTrades.cardId], references: [playerCards.id] }),
+}));
+
 export const insertPlayerSchema = createInsertSchema(players);
 export const insertPlayerCardSchema = createInsertSchema(playerCards);
 export const insertWalletSchema = createInsertSchema(wallets);
@@ -302,6 +355,9 @@ export const insertCompetitionSchema = createInsertSchema(competitions);
 export const insertCompetitionEntrySchema = createInsertSchema(competitionEntries);
 export const insertSwapOfferSchema = createInsertSchema(swapOffers);
 export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests);
+export const insertNotificationSchema = createInsertSchema(notifications);
+export const insertUserTradeHistorySchema = createInsertSchema(userTradeHistory);
+export const insertMarketplaceTradeSchema = createInsertSchema(marketplaceTrades);
 
 export type Player = typeof players.$inferSelect;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
@@ -323,6 +379,12 @@ export type SwapOffer = typeof swapOffers.$inferSelect;
 export type InsertSwapOffer = z.infer<typeof insertSwapOfferSchema>;
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type UserTradeHistory = typeof userTradeHistory.$inferSelect;
+export type InsertUserTradeHistory = z.infer<typeof insertUserTradeHistorySchema>;
+export type MarketplaceTrade = typeof marketplaceTrades.$inferSelect;
+export type InsertMarketplaceTrade = z.infer<typeof insertMarketplaceTradeSchema>;
 
 export type PlayerCardWithPlayer = PlayerCard & { player: Player };
 export type CompetitionWithEntries = Competition & { entries: CompetitionEntry[]; entryCount: number };

@@ -8,6 +8,8 @@ The following environment variables are required for deployment to Railway or ot
 - **`DATABASE_URL`** (Required): PostgreSQL connection string
   - Example: `postgresql://user:password@host:5432/database`
   - Used by: Drizzle ORM for all database operations
+  - Requirements: PostgreSQL 12 or higher recommended
+  - Features used: JSONB columns, generated identity columns, enums
 
 ### API Keys
 - **`API_FOOTBALL_KEY`** (Optional when FANTASY_LEAGUE_API_KEY is set): API-Football API key for EPL data integration
@@ -49,8 +51,9 @@ The following environment variables are required for deployment to Railway or ot
 ## Railway Deployment
 
 ### Step 1: Provision PostgreSQL Database
-1. In Railway dashboard, add PostgreSQL service
+1. In Railway dashboard, add PostgreSQL service (version 12+ recommended)
 2. Copy the `DATABASE_URL` from database settings
+3. Ensure the database supports JSONB and enum types
 
 ### Step 2: Set Environment Variables
 In Railway project settings > Variables, add required variables:

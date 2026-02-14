@@ -284,13 +284,15 @@ export async function fetchInjuryUpdates(): Promise<any[]> {
  * - -0.1 points per goal conceded
  */
 function calculateFantasyPoints(team: any): number {
-  // Simple formula: wins * 3 + draws * 1 + (goals for / 10) - (goals against / 10)
   const winPoints = team.won * 3;
   const drawPoints = team.drawn * 1;
   const goalBonus = team.goalsFor / 10;
   const goalPenalty = team.goalsAgainst / 10;
   
-  return Math.round((winPoints + drawPoints + goalBonus - goalPenalty) * 10) / 10;
+  const totalPoints = winPoints + drawPoints + goalBonus - goalPenalty;
+  
+  // Use toFixed for reliable rounding to 1 decimal place
+  return parseFloat(totalPoints.toFixed(1));
 }
 
 /**

@@ -10,6 +10,18 @@ import { STAT_MULTIPLIERS } from "@shared/game-rules";
 export type Rarity = "Common" | "Rare" | "Unique" | "Epic" | "Legendary";
 
 /**
+ * Card interface for type safety
+ */
+export interface CardWithStats {
+  rarity: string;
+  xp?: number;
+  decisiveScore?: number;
+  level?: number;
+  last5Scores?: number[];
+  [key: string]: any; // Allow additional properties
+}
+
+/**
  * Apply rarity multiplier to a single stat value
  * @param stat - The base stat value
  * @param rarity - The card rarity
@@ -29,7 +41,7 @@ export function applyRarityMultiplier(stat: number, rarity: string): number {
  * @param card - The card object with stats
  * @returns The card with scaled stats
  */
-export function applyCardStatMultipliers(card: any): any {
+export function applyCardStatMultipliers<T extends CardWithStats>(card: T): T {
   if (!card || !card.rarity) {
     return card;
   }
@@ -70,7 +82,7 @@ export function applyCardStatMultipliers(card: any): any {
  * @param cards - Array of card objects
  * @returns Array of cards with scaled stats
  */
-export function applyMultipliersToCards(cards: any[]): any[] {
+export function applyMultipliersToCards<T extends CardWithStats>(cards: T[]): T[] {
   if (!Array.isArray(cards)) {
     return [];
   }

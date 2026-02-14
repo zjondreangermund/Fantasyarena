@@ -1,4 +1,4 @@
-import Card3D from "./Card3D";
+import PlayerCard from "./threeplayercards";
 import { type PlayerCardWithPlayer } from "@shared/schema";
 
 interface PlayerCardProps {

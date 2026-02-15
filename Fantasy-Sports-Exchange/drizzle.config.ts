@@ -1,13 +1,10 @@
-import { defineConfig } from "drizzle-kit";
-import { prepareDatabaseUrl } from "./Fantasy-Sports-Exchange/server/db-config";
+import type { Config } from "drizzle-kit";
 
-// Prepare DATABASE_URL with SSL configuration for Render if needed
-const databaseUrl = prepareDatabaseUrl(process.env.DATABASE_URL);
-
-export default defineConfig({
+export default {
   schema: "./shared/schema.ts",
+  out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: databaseUrl,
+    url: process.env.DATABASE_URL!,
   },
-});
+} satisfies Config;

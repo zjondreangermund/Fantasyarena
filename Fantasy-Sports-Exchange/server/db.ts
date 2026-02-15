@@ -51,8 +51,17 @@ If you deployed to RAILWAY:
 // Prepare DATABASE_URL with SSL configuration for Render if needed
 const databaseUrl = prepareDatabaseUrl(process.env.DATABASE_URL);
 
-export const pool = new Pool({ 
-  connectionString: databaseUrl,
-  ssl: getSSLConfig()
-});
+// Create Pool with explicit SSL configuration
+const poolConfig: any = { 
+  connectionString: databaseUrl
+};
+
+// Add SSL config for Render
+const sslConfig = getSSLConfig();
+if (sslConfig) {
+  poolConfig.ssl = sslConfig;
+  console.log("✓ SSL configuration applied to database Pool connection");
+}
+
+export const pool = new Pool(poolConfig);
 export const db = drizzle(pool, { schema });

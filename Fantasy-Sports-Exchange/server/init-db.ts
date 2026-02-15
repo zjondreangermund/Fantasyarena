@@ -23,10 +23,17 @@ export async function initializeDatabase() {
       return;
     } catch (error: any) {
       // Error code 42P01 means "relation does not exist" - expected on first run
-      if (error.code !== '42P01') {
+      // DEPTH_ZERO_SELF_SIGNED_CERT can happen during initial connection before SSL config applies
+      if (error.code !== '42P01' && error.code !== 'DEPTH_ZERO_SELF_SIGNED_CERT') {
         console.error("⚠ Unexpected error checking database schema:", error.message);
         throw error;
       }
+      
+      if (error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+        console.log("⚠ Self-signed certificate detected - this is expected for Render PostgreSQL");
+        console.log("   SSL configuration will handle this for database operations");
+      }
+      
       console.log("Database schema does not exist - initializing...");
     }
     

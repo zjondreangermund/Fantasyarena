@@ -21,6 +21,8 @@ export function prepareDatabaseUrl(databaseUrl: string | undefined): string {
 
   if (isRender && !hasSSL) {
     // Add SSL mode for Render PostgreSQL
+    // Use 'require' mode - SSL is required but certificate is not verified
+    // The Pool config with rejectUnauthorized: false handles self-signed certs
     const separator = databaseUrl.includes('?') ? '&' : '?';
     databaseUrl = `${databaseUrl}${separator}sslmode=require`;
     console.log("✓ SSL mode added to DATABASE_URL for Render PostgreSQL");

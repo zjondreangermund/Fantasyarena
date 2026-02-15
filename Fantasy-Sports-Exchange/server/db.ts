@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
+import { prepareDatabaseUrl, getSSLConfig } from "./db-config";
 
 const { Pool } = pg;
 
@@ -47,23 +48,11 @@ If you deployed to RAILWAY:
   throw new Error("DATABASE_URL must be set. See error message above for solutions.");
 }
 
-// Ensure SSL is enabled for Render PostgreSQL connections
-// Render requires SSL for external connections
-let databaseUrl = process.env.DATABASE_URL;
-
-// Check if we're on Render or if URL doesn't have SSL parameters already
-const isRender = process.env.RENDER === 'true' || databaseUrl.includes('render.com');
-const hasSSL = databaseUrl.includes('ssl=') || databaseUrl.includes('sslmode=');
-
-if (isRender && !hasSSL) {
-  // Add SSL mode for Render PostgreSQL
-  const separator = databaseUrl.includes('?') ? '&' : '?';
-  databaseUrl = `${databaseUrl}${separator}sslmode=require`;
-  console.log("✓ SSL mode added to DATABASE_URL for Render PostgreSQL");
-}
+// Prepare DATABASE_URL with SSL configuration for Render if needed
+const databaseUrl = prepareDatabaseUrl(process.env.DATABASE_URL);
 
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  ssl: isRender ? { rejectUnauthorized: false } : undefined
+  ssl: getSSLConfig()
 });
 export const db = drizzle(pool, { schema });

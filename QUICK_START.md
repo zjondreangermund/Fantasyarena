@@ -129,30 +129,35 @@ Render will automatically:
 - `error: relation "wallets" does not exist`
 - `error: relation "user_onboarding" does not exist`
 - `error: no pg_hba.conf entry` or `SSL connection required`
+- `Error: self-signed certificate` or `DEPTH_ZERO_SELF_SIGNED_CERT`
 
-**This is CRITICAL!** Your database exists but tables weren't created.
+**This is CRITICAL!** Your database exists but has connection or schema issues.
 
 **Solution:** ✅ FIXED in latest code
 1. The fix is already in `copilot/set-up-railway-deployment` branch
 2. Redeploy from that branch (will auto-create tables on startup)
 3. **SSL is now auto-configured for Render PostgreSQL**
-4. Check logs for "Database schema successfully created!"
-5. If still failing, see DATABASE_INITIALIZATION_TROUBLESHOOTING.md
+4. **Self-signed certificates are handled automatically**
+5. Check logs for "Database schema successfully created!"
+6. If still failing, see DATABASE_INITIALIZATION_TROUBLESHOOTING.md
 
 **Why this happens:**
 - Database was provisioned ✅
 - DATABASE_URL was set ✅
 - But schema (tables) weren't created ❌
 - Or SSL connection required for Render ❌
+- Or self-signed certificate rejected ❌
 
 **What the fix does:**
 - **Removes invalid `--yes` flag** from drizzle-kit command
 - **Auto-adds SSL for Render PostgreSQL** connections
+- **Accepts self-signed certificates** from Render
 - Tables auto-create on first server startup
 - Takes 10-30 seconds on first deploy
 - Future deploys skip this (< 1 second check)
 
 📖 **Guides:**
+- [SELF_SIGNED_CERTIFICATE_FIX.md](SELF_SIGNED_CERTIFICATE_FIX.md) - Self-signed cert errors
 - [DATABASE_INITIALIZATION_TROUBLESHOOTING.md](DATABASE_INITIALIZATION_TROUBLESHOOTING.md) - Specific init issues
 - [DATABASE_SCHEMA_SETUP.md](DATABASE_SCHEMA_SETUP.md) - Complete database guide
 

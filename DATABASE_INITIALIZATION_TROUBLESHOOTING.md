@@ -48,6 +48,44 @@ The application now automatically detects Render and adds SSL configuration:
 2. **Auto-configuration:**
    - Appends `?sslmode=require` to DATABASE_URL
    - Configures Pool with `ssl: { rejectUnauthorized: false }`
+
+---
+
+### Issue 2b: Self-Signed Certificate Error
+
+**Symptom:**
+```
+Error: self-signed certificate
+code: 'DEPTH_ZERO_SELF_SIGNED_CERT'
+All API routes return 500 errors
+```
+
+**Cause:**
+Render PostgreSQL uses self-signed SSL certificates. Node.js's pg library rejects these by default.
+
+**Solution:** ✅ FIXED
+The application now handles self-signed certificates:
+
+1. **SSL Configuration:**
+   - Adds `sslmode=require` to DATABASE_URL
+   - Configures Pool with `ssl: { rejectUnauthorized: false }`
+
+2. **Error Handling:**
+   - Init process treats DEPTH_ZERO_SELF_SIGNED_CERT as expected
+   - Continues with database initialization
+
+3. **Logging:**
+   - "✓ SSL configuration applied to database Pool connection"
+   - "⚠ Self-signed certificate detected - this is expected for Render PostgreSQL"
+
+**Verification:**
+Check logs for:
+```
+✓ SSL mode added to DATABASE_URL for Render PostgreSQL
+✓ SSL configuration applied to database Pool connection
+```
+
+**More Details:** See `SELF_SIGNED_CERTIFICATE_FIX.md`
    - Applied to both runtime (db.ts) and migrations (drizzle.config.ts)
 
 **Verification:**

@@ -67,6 +67,17 @@ npm run db:push
 
 ## 🆘 Troubleshooting
 
+### App crashes with "DATABASE_URL must be set" error
+**Problem:** Database isn't connected or DATABASE_URL environment variable is missing
+
+**Solutions:**
+- **If database is still provisioning:** Wait 2-3 minutes and check status in Render dashboard
+- **If database failed:** Check database service shows "Available" status
+- **If using Blueprint:** DATABASE_URL should be auto-set; verify in Environment tab
+- **If manual setup:** Add DATABASE_URL from database "External Database URL"
+
+📖 **Complete guide:** [DATABASE_URL_ERROR.md](DATABASE_URL_ERROR.md) with solutions for all scenarios
+
 ### Build fails with "vite: not found" or peer dependency errors
 **Problem:** You deployed from the wrong branch (main instead of copilot/set-up-railway-deployment)
 

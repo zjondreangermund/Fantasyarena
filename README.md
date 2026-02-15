@@ -18,31 +18,53 @@ No credit card required • Free for 90 days • Auto-deploy from GitHub
 - Node.js 20.x or higher
 - PostgreSQL database
 
-### Setup
+### Quick Setup
 
-1. Install dependencies:
-```bash
-npm install --legacy-peer-deps
-```
+1. **Install PostgreSQL** (if not already installed):
+   ```bash
+   # Mac
+   brew install postgresql
+   brew services start postgresql
+   
+   # Ubuntu/Debian
+   sudo apt-get install postgresql
+   sudo service postgresql start
+   ```
 
-2. Set up environment variables (create a `.env` file):
-```env
-DATABASE_URL=postgresql://username:password@localhost:5432/fantasyarena
-NODE_ENV=development
-PORT=5000
-```
+2. **Create the database**:
+   ```bash
+   createdb fantasyarena
+   ```
 
-3. Push the database schema:
-```bash
-npm run db:push
-```
+3. **Install dependencies**:
+   ```bash
+   npm install --legacy-peer-deps
+   ```
 
-4. Start the development server:
-```bash
-npm run dev
-```
+4. **Set up environment variables** (create a `.env` file in project root):
+   ```env
+   DATABASE_URL=postgresql://localhost:5432/fantasyarena
+   NODE_ENV=development
+   PORT=5000
+   ```
+   
+   > 💡 **Tip:** Copy `.env.example` and rename it to `.env`
+
+5. **Push the database schema**:
+   ```bash
+   npm run db:push
+   ```
+
+6. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
 
 The application will be available at `http://localhost:5000`
+
+### Troubleshooting Local Setup
+
+If you get a **"DATABASE_URL must be set"** error, see [DATABASE_URL_ERROR.md](DATABASE_URL_ERROR.md) for detailed troubleshooting steps.
 
 ## Building for Production
 

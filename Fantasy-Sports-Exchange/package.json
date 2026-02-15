@@ -1,5 +1,5 @@
 {
-  "build": "cd Fantasy-Sports-Exchange && npm run build:client && npm run build:server",
+  "build": "npm run build:client && npm run build:server",
   "build:client": "vite build",
-  "build:server": "esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=../dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws"
+  "build:server": "esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --define:process.env.NODE_ENV=\\\"production\\\" --outfile=../dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws"
 }

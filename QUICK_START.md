@@ -32,20 +32,11 @@ Render will automatically:
 - ✅ Build your app
 - ✅ Connect everything together
 - ✅ **Set all environment variables automatically** (DATABASE_URL, NODE_ENV, PORT)
+- ✅ **Initialize database schema automatically** (creates all tables on first startup)
 
-**You don't need to set ANY variables!** The Blueprint handles everything. ✨
+**You don't need to set ANY variables or run ANY commands!** The Blueprint handles everything. ✨
 
-### Step 4: Initialize Database
-After deployment completes:
-
-1. Click on your **web service** in Render dashboard
-2. Click **"Shell"** tab
-3. Type this command and press Enter:
-```bash
-npm run db:push
-```
-
-### Step 5: Access Your Site! 🎉
+### Step 4: Access Your Site! 🎉
 - Find your URL in the Render dashboard
 - It will look like: `https://fantasy-arena.onrender.com`
 - **Your site is live!**
@@ -132,10 +123,31 @@ npm run db:push
 2. Ensure you have `render.yaml` in your repository
 3. See full troubleshooting in RENDER_DEPLOYMENT.md
 
-### Database won't initialize
-1. Make sure deployment finished completely
-2. Wait 1-2 minutes after deploy completes
-3. Try running `npm run db:push` again
+### Database won't initialize / "relation does not exist" errors
+**Problem:** API routes return 500 errors with messages like:
+- `error: relation "player_cards" does not exist`
+- `error: relation "wallets" does not exist`
+- `error: relation "user_onboarding" does not exist`
+
+**This is CRITICAL!** Your database exists but tables weren't created.
+
+**Solution:**
+1. The fix is already in `copilot/set-up-railway-deployment` branch
+2. Redeploy from that branch (will auto-create tables on startup)
+3. Check logs for "Database schema successfully created!"
+4. If still failing, see DATABASE_SCHEMA_SETUP.md
+
+**Why this happens:**
+- Database was provisioned ✅
+- DATABASE_URL was set ✅
+- But schema (tables) weren't created ❌
+
+**After the fix:**
+- Tables auto-create on first server startup
+- Takes 10-30 seconds on first deploy
+- Future deploys skip this (< 1 second check)
+
+📖 **Complete guide:** [DATABASE_SCHEMA_SETUP.md](DATABASE_SCHEMA_SETUP.md) with technical details
 
 ### Site is slow
 - **First load after sleep**: 20-30 seconds (normal on free tier)

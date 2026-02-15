@@ -270,6 +270,28 @@ sh: 1: vite: not found
 - Check that database schema has been pushed
 - Try restarting both web service and database
 
+### Site Loads as Plain Text - CSS/Assets Not Loading ⚠️
+
+**Problem**: Site loads but appears as plain HTML without styling or layout. CSS and JavaScript files aren't being applied.
+
+**Common Causes:**
+- Static files served with incorrect MIME types
+- Build artifacts not generated correctly
+- Asset paths don't match file locations
+
+**Quick Check:**
+1. Open browser DevTools → Network tab
+2. Check if CSS/JS files load with Status 200
+3. Verify Content-Type headers:
+   - CSS should be `text/css; charset=utf-8`
+   - JS should be `application/javascript; charset=utf-8`
+4. If Content-Type is wrong (text/plain or text/html), that's the issue
+
+**Solution:**
+The fix has been implemented in the codebase (see `Fantasy-Sports-Exchange/server/static.ts`). Ensure you're deploying from the `copilot/set-up-railway-deployment` branch which includes the fix.
+
+📖 **Complete Guide:** See [CSS_ASSETS_NOT_LOADING.md](CSS_ASSETS_NOT_LOADING.md) for detailed troubleshooting and verification steps
+
 ### Cold Start Issues
 
 **Problem**: App is slow on first request

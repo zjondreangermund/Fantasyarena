@@ -125,6 +125,17 @@ npm run db:push
 - **After that**: Fast!
 - **Solution**: Use UptimeRobot (free) to ping your site every 10 min
 
+### Site loads but no CSS/styling appears
+**Problem:** Page loads as plain HTML without any layout or styling
+
+**Quick Fix:**
+1. Check browser DevTools → Network tab
+2. Look at CSS/JS files - do they have Status 200?
+3. Check Content-Type headers (should be text/css and application/javascript)
+4. If Content-Type is wrong, redeploy from correct branch
+
+📖 **Complete guide:** [CSS_ASSETS_NOT_LOADING.md](CSS_ASSETS_NOT_LOADING.md)
+
 ---
 
 ## 📚 Need More Info?

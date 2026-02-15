@@ -4,6 +4,24 @@
 
 Site loads as plain text/HTML without CSS or layout on Render deployment.
 
+### Common Symptoms
+
+**Symptom 1: "I see all text but no styling"**
+- ✅ All text content visible (menus, headings, paragraphs)
+- ❌ No colors, backgrounds, or images
+- ❌ No layout or spacing
+- ❌ Everything looks like plain text
+
+👉 **Quick Fix:** See [NO_STYLING_VISIBLE.md](NO_STYLING_VISIBLE.md) for immediate solution
+
+**Symptom 2: "CSS files show as plain text"**
+- CSS files return Status 200 but display as text
+- Content-Type is wrong (text/plain instead of text/css)
+
+**Symptom 3: "404 errors on asset files"**
+- CSS/JS files return 404 Not Found
+- Build artifacts missing or in wrong location
+
 ## Root Cause
 
 This issue typically occurs when:

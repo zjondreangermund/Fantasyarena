@@ -136,6 +136,13 @@ npm run db:push
 
 📖 **Complete guide:** [CSS_ASSETS_NOT_LOADING.md](CSS_ASSETS_NOT_LOADING.md)
 
+### I see all text but "no pics, background, etc"
+**Problem:** All content visible but no styling, colors, backgrounds, or images
+
+**This is the same as above** - your CSS isn't loading. Follow the fix above or see:
+
+📖 **Step-by-step fix:** [NO_STYLING_VISIBLE.md](NO_STYLING_VISIBLE.md) - made specifically for this symptom
+
 ---
 
 ## 📚 Need More Info?

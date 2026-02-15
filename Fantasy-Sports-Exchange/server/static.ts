@@ -58,7 +58,25 @@ export function serveStatic(app: Express) {
          }
        }));
        // SPA fallback route for React Router
-       app.get("/*splat", (_req, res) => res.sendFile(path.resolve(fallbackPath, "index.html")));
+       app.get("/*splat", (req, res, next) => {
+         const requestPath = req.path;
+         
+         // Skip API routes
+         if (requestPath.startsWith('/api/')) {
+           console.log(`⚠ API route ${requestPath} reached SPA fallback - this should not happen!`);
+           return next();
+         }
+         
+         // Skip static asset requests
+         const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.json', '.map'];
+         if (staticExtensions.some(ext => requestPath.endsWith(ext))) {
+           console.log(`⚠ Static asset ${requestPath} reached SPA fallback - file may not exist`);
+           return res.status(404).send('Asset not found');
+         }
+         
+         console.log(`SPA fallback triggered for client route: ${requestPath} -> index.html`);
+         res.sendFile(path.resolve(fallbackPath, "index.html"));
+       });
        console.log(`✓ Static file middleware configured with fallback`);
        return;
      }
@@ -105,11 +123,30 @@ export function serveStatic(app: Express) {
   console.log(`✓ SPA fallback route will serve: ${path.resolve(distPath, "index.html")}`);
   console.log("=".repeat(80));
   
-  // SPA fallback route - serves index.html for all non-API routes
+  // SPA fallback route - serves index.html for all non-API, non-static routes
   // This allows React Router to handle client-side routing
-  app.get("/*splat", (req, res) => {
+  // IMPORTANT: This must NOT match /api/* routes or static asset paths
+  app.get("/*splat", (req, res, next) => {
+    const requestPath = req.path;
+    
+    // Skip API routes - these should have been handled by API router already
+    if (requestPath.startsWith('/api/')) {
+      console.log(`⚠ API route ${requestPath} reached SPA fallback - this should not happen!`);
+      return next(); // Pass to error handler
+    }
+    
+    // Skip static asset requests (common extensions)
+    // If a static file exists, express.static middleware should have handled it already
+    // If we're here, it means either the file doesn't exist or wasn't caught by static middleware
+    const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.json', '.map'];
+    if (staticExtensions.some(ext => requestPath.endsWith(ext))) {
+      console.log(`⚠ Static asset ${requestPath} reached SPA fallback - file may not exist`);
+      return res.status(404).send('Asset not found');
+    }
+    
+    // This is a client-side route - serve index.html for React Router
     const indexPath = path.resolve(distPath, "index.html");
-    console.log(`SPA fallback triggered for: ${req.path} -> ${indexPath}`);
+    console.log(`SPA fallback triggered for client route: ${requestPath} -> index.html`);
     res.sendFile(indexPath);
   });
 }

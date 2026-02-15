@@ -3,14 +3,34 @@ import fs from "fs";
 import path from "path";
 
 export function serveStatic(app: Express) {
+  // Use absolute path resolution from project root
   const distPath = path.resolve(process.cwd(), "dist", "public");
 
+  console.log("=".repeat(80));
+  console.log("Static File Serving Configuration");
+  console.log("=".repeat(80));
+  console.log(`Current working directory: ${process.cwd()}`);
+  console.log(`__dirname would be: ${__dirname}`);
   console.log(`Checking for build directory at: ${distPath}`);
+  console.log(`Directory exists: ${fs.existsSync(distPath)}`);
+
+  if (fs.existsSync(distPath)) {
+    const files = fs.readdirSync(distPath);
+    console.log(`Found ${files.length} items in build directory:`);
+    files.forEach(file => console.log(`  - ${file}`));
+    
+    // Check for index.html
+    const indexPath = path.resolve(distPath, "index.html");
+    console.log(`index.html exists: ${fs.existsSync(indexPath)}`);
+  }
+  console.log("=".repeat(80));
 
   if (!fs.existsSync(distPath)) {
     const fallbackPath = path.resolve(process.cwd(), "public");
+    console.log(`Primary build directory not found. Trying fallback: ${fallbackPath}`);
+    
     if (fs.existsSync(path.resolve(fallbackPath, "index.html"))) {
-       console.log(`Found build at fallback: ${fallbackPath}`);
+       console.log(`✓ Found build at fallback: ${fallbackPath}`);
        app.use(express.static(fallbackPath, {
          etag: true,
          lastModified: true,
@@ -37,13 +57,21 @@ export function serveStatic(app: Express) {
            }
          }
        }));
-       // FIX: Use named wildcard for Express v5
+       // SPA fallback route for React Router
        app.get("/*splat", (_req, res) => res.sendFile(path.resolve(fallbackPath, "index.html")));
+       console.log(`✓ Static file middleware configured with fallback`);
        return;
-    }
+     }
 
-    throw new Error(`Could not find the build directory: ${distPath}. Build artifacts missing.`);
+    console.error(`✗ Could not find build directory at: ${distPath}`);
+    console.error(`✗ Fallback directory also not found at: ${fallbackPath}`);
+    throw new Error(
+      `Could not find the build directory: ${distPath}. ` +
+      `Build artifacts missing. Make sure 'npm run build' completed successfully.`
+    );
   }
+
+  console.log(`✓ Serving static files from: ${distPath}`);
 
   // Serve static files with proper MIME types
   app.use(express.static(distPath, {
@@ -73,6 +101,15 @@ export function serveStatic(app: Express) {
     }
   }));
   
-  // FIX: Use named wildcard for Express v5
-  app.get("/*splat", (_req, res) => res.sendFile(path.resolve(distPath, "index.html")));
+  console.log(`✓ Static file middleware configured`);
+  console.log(`✓ SPA fallback route will serve: ${path.resolve(distPath, "index.html")}`);
+  console.log("=".repeat(80));
+  
+  // SPA fallback route - serves index.html for all non-API routes
+  // This allows React Router to handle client-side routing
+  app.get("/*splat", (req, res) => {
+    const indexPath = path.resolve(distPath, "index.html");
+    console.log(`SPA fallback triggered for: ${req.path} -> ${indexPath}`);
+    res.sendFile(indexPath);
+  });
 }

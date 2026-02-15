@@ -84,6 +84,23 @@ npm run db:push
 
 📖 **Complete guide:** [EMPTY_ENVIRONMENT_TAB.md](EMPTY_ENVIRONMENT_TAB.md) with step-by-step instructions
 
+### ⚠️ CRITICAL: API calls return HTML or CSS files show HTML content
+**Problem:** SPA fallback route is catching all requests including API and assets
+
+**Symptoms:**
+- API routes return `<!DOCTYPE html>` instead of JSON
+- CSS/JS files contain HTML in Network tab preview
+- Console error: "Unexpected token '<'"
+- MIME type error: "Refused to apply style... MIME type ('text/html')"
+
+**Solution:**
+1. This fix is already in `copilot/set-up-railway-deployment` branch
+2. Deploy from that branch (Settings → Branch → change to copilot/set-up-railway-deployment)
+3. Wait for deployment to complete
+4. Clear browser cache (Ctrl+Shift+R or Incognito)
+
+📖 **Complete guide:** [SPA_FALLBACK_ISSUE.md](SPA_FALLBACK_ISSUE.md) with detailed explanation and verification steps
+
 ### App crashes with "DATABASE_URL must be set" error
 **Problem:** Database isn't connected or DATABASE_URL environment variable is missing
 

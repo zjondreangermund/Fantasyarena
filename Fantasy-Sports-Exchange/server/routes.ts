@@ -5,6 +5,8 @@ import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { seedDatabase, seedCompetitions } from "./seed";
 
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
+const PLATFORM_FEE_RATE = 0.08; // 8% platform fee
+const MAX_TRANSACTION_AMOUNT = 1000000; // $1M max per transaction
 
 function isAdmin(req: any, res: any, next: any) {
   const user = req.user;
@@ -103,7 +105,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Onboarding status endpoint
   app.get("/api/onboarding/status", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const onboarding = await storage.getOnboarding(userId);
       
       if (!onboarding) {
@@ -125,7 +129,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Wallet endpoints
   app.get("/api/wallet", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       let wallet = await storage.getWallet(userId);
       
       // Create wallet if it doesn't exist
@@ -146,7 +152,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/wallet/withdrawals", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const withdrawals = await storage.getUserWithdrawalRequests(userId);
       res.json(withdrawals);
     } catch (error: any) {
@@ -157,15 +165,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/wallet/deposit", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const { amount } = req.body;
       
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid deposit amount" });
       }
       
-      // Platform fee (8%)
-      const fee = amount * 0.08;
+      if (amount > MAX_TRANSACTION_AMOUNT) {
+        return res.status(400).json({ message: `Maximum deposit amount is $${MAX_TRANSACTION_AMOUNT.toLocaleString()}` });
+      }
+      
+      // Platform fee
+      const fee = amount * PLATFORM_FEE_RATE;
       const netAmount = amount - fee;
       
       // Update wallet balance
@@ -189,11 +203,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/wallet/withdraw", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const { amount, method, address } = req.body;
       
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid withdrawal amount" });
+      }
+      
+      if (amount > MAX_TRANSACTION_AMOUNT) {
+        return res.status(400).json({ message: `Maximum withdrawal amount is $${MAX_TRANSACTION_AMOUNT.toLocaleString()}` });
       }
       
       const wallet = await storage.getWallet(userId);
@@ -201,8 +221,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Insufficient balance" });
       }
       
-      // Platform fee (8%)
-      const fee = amount * 0.08;
+      // Platform fee
+      const fee = amount * PLATFORM_FEE_RATE;
       const netAmount = amount - fee;
       
       // Lock funds
@@ -228,7 +248,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Cards endpoint (user's cards)
   app.get("/api/cards", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const cards = await storage.getUserCards(userId);
       res.json(cards);
     } catch (error: any) {
@@ -240,7 +262,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Lineup endpoints
   app.get("/api/lineup", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const lineup = await storage.getLineup(userId);
       
       if (!lineup) {
@@ -265,7 +289,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/lineup", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || "54644807";
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
       const { cardIds, captainId } = req.body;
       
       if (!Array.isArray(cardIds) || cardIds.length !== 5) {

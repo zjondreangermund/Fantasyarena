@@ -266,7 +266,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompetitions(): Promise<Competition[]> {
-    return db.select().from(competitions).orderBy(desc(competitions.startTime));
+    return db.select().from(competitions).orderBy(desc(competitions.startDate));
   }
 
   async getCompetition(id: number): Promise<Competition | undefined> {

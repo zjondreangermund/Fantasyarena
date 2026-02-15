@@ -126,6 +126,175 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Onboarding packs endpoint
+  app.get("/api/onboarding", async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
+      // Check if user has completed onboarding
+      const onboarding = await storage.getOnboarding(userId);
+      if (onboarding?.completed) {
+        return res.json({ packs: [], packLabels: [], completed: true });
+      }
+      
+      // Get all available players
+      const allPlayers = await storage.getPlayers();
+      
+      // Group players by position
+      const playersByPosition: Record<string, typeof allPlayers> = {
+        GK: allPlayers.filter(p => p.position === "GK"),
+        DEF: allPlayers.filter(p => p.position === "DEF"),
+        MID: allPlayers.filter(p => p.position === "MID"),
+        FWD: allPlayers.filter(p => p.position === "FWD"),
+      };
+      
+      // Create 5 packs: GK, DEF, MID, FWD, and Wildcard (mix of all positions)
+      const packs: any[][] = [];
+      const packLabels = ["Goalkeepers", "Defenders", "Midfielders", "Forwards", "Wildcards"];
+      
+      // Helper function to get random players
+      const getRandomPlayers = (players: typeof allPlayers, count: number) => {
+        const shuffled = [...players].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, Math.min(count, players.length));
+      };
+      
+      // Pack 1: Goalkeepers (3 cards)
+      const gkPlayers = getRandomPlayers(playersByPosition.GK, 3);
+      packs.push(gkPlayers.map(player => ({
+        id: player.id,
+        playerId: player.id,
+        ownerId: null,
+        rarity: "common" as const,
+        level: 0,
+        xp: 0,
+        isListed: false,
+        listPrice: null,
+        acquiredAt: new Date(),
+        player: player
+      })));
+      
+      // Pack 2: Defenders (3 cards)
+      const defPlayers = getRandomPlayers(playersByPosition.DEF, 3);
+      packs.push(defPlayers.map(player => ({
+        id: player.id + 1000,
+        playerId: player.id,
+        ownerId: null,
+        rarity: "common" as const,
+        level: 0,
+        xp: 0,
+        isListed: false,
+        listPrice: null,
+        acquiredAt: new Date(),
+        player: player
+      })));
+      
+      // Pack 3: Midfielders (3 cards)
+      const midPlayers = getRandomPlayers(playersByPosition.MID, 3);
+      packs.push(midPlayers.map(player => ({
+        id: player.id + 2000,
+        playerId: player.id,
+        ownerId: null,
+        rarity: "common" as const,
+        level: 0,
+        xp: 0,
+        isListed: false,
+        listPrice: null,
+        acquiredAt: new Date(),
+        player: player
+      })));
+      
+      // Pack 4: Forwards (3 cards)
+      const fwdPlayers = getRandomPlayers(playersByPosition.FWD, 3);
+      packs.push(fwdPlayers.map(player => ({
+        id: player.id + 3000,
+        playerId: player.id,
+        ownerId: null,
+        rarity: "common" as const,
+        level: 0,
+        xp: 0,
+        isListed: false,
+        listPrice: null,
+        acquiredAt: new Date(),
+        player: player
+      })));
+      
+      // Pack 5: Wildcards (mix of all positions, 3 cards)
+      const wildcardPlayers = getRandomPlayers(allPlayers, 3);
+      packs.push(wildcardPlayers.map(player => ({
+        id: player.id + 4000,
+        playerId: player.id,
+        ownerId: null,
+        rarity: "common" as const,
+        level: 0,
+        xp: 0,
+        isListed: false,
+        listPrice: null,
+        acquiredAt: new Date(),
+        player: player
+      })));
+      
+      res.json({ packs, packLabels, completed: false });
+    } catch (error: any) {
+      console.error("Failed to fetch onboarding packs:", error);
+      res.status(500).json({ message: "Failed to fetch onboarding packs" });
+    }
+  });
+
+  // Complete onboarding endpoint
+  app.post("/api/onboarding/complete", async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
+      const { cardIds } = req.body;
+      
+      if (!cardIds || !Array.isArray(cardIds) || cardIds.length !== 5) {
+        return res.status(400).json({ message: "Must select exactly 5 cards" });
+      }
+      
+      // Create actual player cards for the selected players
+      const createdCards = [];
+      for (const playerId of cardIds) {
+        const card = await storage.createPlayerCard({
+          playerId: playerId,
+          ownerId: userId,
+          rarity: "common",
+          level: 0,
+          xp: 0,
+          isListed: false,
+          listPrice: null,
+        });
+        createdCards.push(card);
+      }
+      
+      // Check if onboarding record exists
+      let onboarding = await storage.getOnboarding(userId);
+      
+      if (onboarding) {
+        // Update existing onboarding record
+        onboarding = await storage.updateOnboarding(userId, {
+          completed: true,
+          hasStarterPacks: true,
+          selectedCards: cardIds,
+        });
+      } else {
+        // Create new onboarding record
+        onboarding = await storage.createOnboarding({
+          userId,
+          completed: true,
+          hasStarterPacks: true,
+          selectedCards: cardIds,
+        });
+      }
+      
+      res.json({ success: true, cards: createdCards, onboarding });
+    } catch (error: any) {
+      console.error("Failed to complete onboarding:", error);
+      res.status(500).json({ message: "Failed to complete onboarding" });
+    }
+  });
+
   // Wallet endpoints
   app.get("/api/wallet", async (req: any, res) => {
     try {

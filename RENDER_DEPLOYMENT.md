@@ -2,6 +2,8 @@
 
 This document provides step-by-step instructions for deploying the Fantasy Arena application to Render.com - a free alternative to Railway.
 
+> **💡 Quick Note:** If you use **Option 1 (Blueprint)**, all environment variables are set automatically! You only need to manually configure variables if you use **Option 2 (Manual Setup)**. See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for details.
+
 ## Why Render.com?
 
 - **Free Tier**: Web services and PostgreSQL database (free for 90 days)
@@ -95,9 +97,25 @@ If you prefer manual setup or the blueprint doesn't work:
 
 5. **Add Environment Variables**
    - Click "Advanced" or go to Environment tab
-   - Add these variables:
-     - `NODE_ENV` = `production`
-     - `DATABASE_URL` = [Paste your PostgreSQL External Database URL from Step 1]
+   - Add these **2 required variables**:
+   
+   ```
+   Key: NODE_ENV
+   Value: production
+   
+   Key: DATABASE_URL  
+   Value: [Paste your PostgreSQL External Database URL from Step 1]
+   ```
+   
+   **Where to find DATABASE_URL:**
+   - Go back to your PostgreSQL database page in Render
+   - Scroll to "Connections" section
+   - Copy the **"External Database URL"** (starts with `postgresql://`)
+   - Paste it as the value for DATABASE_URL
+   
+   **Note:** Don't set PORT - Render sets it automatically!
+   
+   📖 **Need more help?** See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for detailed guidance.
 
 6. Click "Create Web Service"
 

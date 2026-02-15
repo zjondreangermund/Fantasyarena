@@ -2,6 +2,10 @@
 
 You exceeded Railway's free tier. Here's how to get your Fantasy Arena site online **RIGHT NOW** for free!
 
+> **💡 About Environment Variables:** When you use Blueprint (this guide), **all environment variables are set automatically**! You don't need to configure anything. Just deploy and go! 
+> 
+> For details on variables or manual setup, see [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)
+
 ## ⚡ Fastest Way (10 Minutes)
 
 ### Step 1: Sign Up
@@ -22,6 +26,9 @@ Render will automatically:
 - ✅ Create PostgreSQL database
 - ✅ Build your app
 - ✅ Connect everything together
+- ✅ **Set all environment variables automatically** (DATABASE_URL, NODE_ENV, PORT)
+
+**You don't need to set ANY variables!** The Blueprint handles everything. ✨
 
 ### Step 4: Initialize Database
 After deployment completes:

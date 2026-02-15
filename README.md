@@ -119,6 +119,12 @@ Not sure which platform to choose? See [HOSTING_ALTERNATIVES.md](HOSTING_ALTERNA
 | `NODE_ENV` | Environment (development/production) | No | development |
 | `PORT` | Server port | No | 5000 |
 
+**🔧 Need help with environment variables?** See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for:
+- What each variable does
+- When they're set automatically (Blueprint) vs when you need to set them (Manual)
+- Where to find values for manual setup
+- Troubleshooting connection issues
+
 ## Project Structure
 
 ```

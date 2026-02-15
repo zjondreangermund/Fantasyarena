@@ -26,6 +26,7 @@ export default defineConfig(async () => {
 
   return {
     plugins,
+    base: "/", // Explicit base path for production asset references
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "client", "src"),

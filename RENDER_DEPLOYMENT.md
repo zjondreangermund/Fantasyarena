@@ -262,13 +262,20 @@ sh: 1: vite: not found
 
 ### Database Connection Errors
 
-**Problem**: Can't connect to database
+**Problem**: Can't connect to database or "relation does not exist" errors
 
-**Solutions**:
+**Solutions:**
+- ✅ **SSL Auto-Configured**: Latest code automatically adds SSL for Render PostgreSQL
 - Verify DATABASE_URL is correct (use "External Database URL" from Render)
-- Ensure PostgreSQL service is running
-- Check that database schema has been pushed
-- Try restarting both web service and database
+- Ensure PostgreSQL service is running and shows "Available" status
+- Check logs for "Database schema successfully created!" message
+- Database schema auto-initializes on first startup (no manual steps!)
+- If still failing, see [DATABASE_INITIALIZATION_TROUBLESHOOTING.md](DATABASE_INITIALIZATION_TROUBLESHOOTING.md)
+
+**Common Errors:**
+- `error: no pg_hba.conf entry` → SSL required (auto-fixed in latest code)
+- `error: relation "users" does not exist` → Schema not created (auto-fixed in latest code)
+- `Unknown option '--yes'` → Invalid drizzle-kit flag (fixed in latest code)
 
 ### Site Loads as Plain Text - CSS/Assets Not Loading ⚠️
 

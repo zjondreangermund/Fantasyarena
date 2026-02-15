@@ -128,26 +128,33 @@ Render will automatically:
 - `error: relation "player_cards" does not exist`
 - `error: relation "wallets" does not exist`
 - `error: relation "user_onboarding" does not exist`
+- `error: no pg_hba.conf entry` or `SSL connection required`
 
 **This is CRITICAL!** Your database exists but tables weren't created.
 
-**Solution:**
+**Solution:** ✅ FIXED in latest code
 1. The fix is already in `copilot/set-up-railway-deployment` branch
 2. Redeploy from that branch (will auto-create tables on startup)
-3. Check logs for "Database schema successfully created!"
-4. If still failing, see DATABASE_SCHEMA_SETUP.md
+3. **SSL is now auto-configured for Render PostgreSQL**
+4. Check logs for "Database schema successfully created!"
+5. If still failing, see DATABASE_INITIALIZATION_TROUBLESHOOTING.md
 
 **Why this happens:**
 - Database was provisioned ✅
 - DATABASE_URL was set ✅
 - But schema (tables) weren't created ❌
+- Or SSL connection required for Render ❌
 
-**After the fix:**
+**What the fix does:**
+- **Removes invalid `--yes` flag** from drizzle-kit command
+- **Auto-adds SSL for Render PostgreSQL** connections
 - Tables auto-create on first server startup
 - Takes 10-30 seconds on first deploy
 - Future deploys skip this (< 1 second check)
 
-📖 **Complete guide:** [DATABASE_SCHEMA_SETUP.md](DATABASE_SCHEMA_SETUP.md) with technical details
+📖 **Guides:**
+- [DATABASE_INITIALIZATION_TROUBLESHOOTING.md](DATABASE_INITIALIZATION_TROUBLESHOOTING.md) - Specific init issues
+- [DATABASE_SCHEMA_SETUP.md](DATABASE_SCHEMA_SETUP.md) - Complete database guide
 
 ### Site is slow
 - **First load after sleep**: 20-30 seconds (normal on free tier)

@@ -2,6 +2,21 @@ import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 
+// Static file extensions that should never be served as index.html
+const STATIC_FILE_EXTENSIONS = [
+  '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico',
+  '.woff', '.woff2', '.ttf', '.eot', '.json', '.map'
+];
+
+// Logging utilities for better production visibility
+function warnApiRouteFallback(requestPath: string) {
+  console.warn(`⚠ WARNING: API route ${requestPath} reached SPA fallback - this should not happen!`);
+}
+
+function warnMissingAsset(requestPath: string) {
+  console.warn(`⚠ WARNING: Static asset ${requestPath} reached SPA fallback - file may not exist`);
+}
+
 export function serveStatic(app: Express) {
   // Use absolute path resolution from project root
   const distPath = path.resolve(process.cwd(), "dist", "public");
@@ -63,14 +78,13 @@ export function serveStatic(app: Express) {
          
          // Skip API routes
          if (requestPath.startsWith('/api/')) {
-           console.log(`⚠ API route ${requestPath} reached SPA fallback - this should not happen!`);
+           warnApiRouteFallback(requestPath);
            return next();
          }
          
          // Skip static asset requests
-         const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.json', '.map'];
-         if (staticExtensions.some(ext => requestPath.endsWith(ext))) {
-           console.log(`⚠ Static asset ${requestPath} reached SPA fallback - file may not exist`);
+         if (STATIC_FILE_EXTENSIONS.some(ext => requestPath.endsWith(ext))) {
+           warnMissingAsset(requestPath);
            return res.status(404).send('Asset not found');
          }
          
@@ -131,16 +145,15 @@ export function serveStatic(app: Express) {
     
     // Skip API routes - these should have been handled by API router already
     if (requestPath.startsWith('/api/')) {
-      console.log(`⚠ API route ${requestPath} reached SPA fallback - this should not happen!`);
+      warnApiRouteFallback(requestPath);
       return next(); // Pass to error handler
     }
     
     // Skip static asset requests (common extensions)
     // If a static file exists, express.static middleware should have handled it already
     // If we're here, it means either the file doesn't exist or wasn't caught by static middleware
-    const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.json', '.map'];
-    if (staticExtensions.some(ext => requestPath.endsWith(ext))) {
-      console.log(`⚠ Static asset ${requestPath} reached SPA fallback - file may not exist`);
+    if (STATIC_FILE_EXTENSIONS.some(ext => requestPath.endsWith(ext))) {
+      warnMissingAsset(requestPath);
       return res.status(404).send('Asset not found');
     }
     

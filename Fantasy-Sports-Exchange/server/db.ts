@@ -52,7 +52,7 @@ If you deployed to RAILWAY:
 const databaseUrl = prepareDatabaseUrl(process.env.DATABASE_URL);
 
 // Create Pool with explicit SSL configuration
-const poolConfig: any = { 
+const poolConfig: pg.PoolConfig = { 
   connectionString: databaseUrl
 };
 

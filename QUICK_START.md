@@ -129,7 +129,7 @@ Render will automatically:
 - `error: relation "wallets" does not exist`
 - `error: relation "user_onboarding" does not exist`
 - `error: no pg_hba.conf entry` or `SSL connection required`
-- `Error: self-signed certificate` or `DEPTH_ZERO_SELF_SIGNED_CERT`
+- `Error: self-signed certificate` or `code: DEPTH_ZERO_SELF_SIGNED_CERT`
 
 **This is CRITICAL!** Your database exists but has connection or schema issues.
 

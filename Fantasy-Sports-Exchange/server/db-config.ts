@@ -15,8 +15,8 @@ export function prepareDatabaseUrl(databaseUrl: string | undefined): string {
     throw new Error("DATABASE_URL environment variable must be set");
   }
 
-  // Check if we're on Render or if URL doesn't have SSL parameters already
-  const isRender = process.env.RENDER === 'true' || databaseUrl.includes('render.com');
+  // Check if we're on Render using secure detection
+  const isRender = isRenderPlatform();
   const hasSSL = databaseUrl.includes('ssl=') || databaseUrl.includes('sslmode=');
 
   if (isRender && !hasSSL) {
@@ -31,12 +31,31 @@ export function prepareDatabaseUrl(databaseUrl: string | undefined): string {
 
 /**
  * Check if we're running on Render platform
+ * Uses environment variable for primary detection (more reliable)
  * 
  * @returns true if on Render, false otherwise
  */
 export function isRenderPlatform(): boolean {
-  return process.env.RENDER === 'true' || 
-         (process.env.DATABASE_URL?.includes('render.com') ?? false);
+  // Primary detection: Render sets this environment variable
+  if (process.env.RENDER === 'true') {
+    return true;
+  }
+  
+  // Secondary detection: Check if DATABASE_URL is from Render's PostgreSQL
+  // Only check the hostname part of the URL to avoid substring issues
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl) {
+    try {
+      const url = new URL(databaseUrl);
+      // Render PostgreSQL hostnames end with .render.com
+      return url.hostname.endsWith('.render.com');
+    } catch {
+      // Invalid URL format, fall back to false
+      return false;
+    }
+  }
+  
+  return false;
 }
 
 /**

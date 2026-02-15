@@ -4,13 +4,13 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev": "NODE_ENV=development tsx Fantasy-Sports-Exchange/server/index.ts",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
-    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws --external:connect-pg-simple --external:express-session",
+    "build:client": "NODE_ENV=production vite build --config Fantasy-Sports-Exchange/vite.config.ts",
+    "build:server": "esbuild Fantasy-Sports-Exchange/server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws --external:connect-pg-simple --external:express-session --external:vite --external:@vitejs/plugin-react --external:@replit/* --external:lightningcss --external:@babel/*",
     "start": "NODE_ENV=production node dist/index.cjs",
-    "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "check": "tsc --project Fantasy-Sports-Exchange/tsconfig.json",
+    "db:push": "drizzle-kit push --config Fantasy-Sports-Exchange/drizzle.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

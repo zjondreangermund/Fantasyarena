@@ -2,6 +2,16 @@
 
 A Fantasy Sports Exchange application built with React, Express, and PostgreSQL.
 
+## 🚀 Deploy for FREE (10 Minutes)
+
+**Want to get your site online right now?** 
+
+👉 **[See QUICK_START.md](QUICK_START.md)** for the fastest way to deploy for free on Render.com!
+
+No credit card required • Free for 90 days • Auto-deploy from GitHub
+
+---
+
 ## Local Development
 
 ### Prerequisites

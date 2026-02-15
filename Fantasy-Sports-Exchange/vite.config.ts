@@ -18,7 +18,7 @@ export default defineConfig(async () => {
       const devBanner = await import("@replit/vite-plugin-dev-banner").then((m) =>
         m.devBanner(),
       );
-      plugins.push(runtimeErrorOverlay(), cartographer, devBanner);
+      plugins.push(runtimeErrorOverlay, cartographer, devBanner);
     } catch (error) {
       console.warn("Replit plugins not available, skipping...");
     }

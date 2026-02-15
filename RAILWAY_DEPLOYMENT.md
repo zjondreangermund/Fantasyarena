@@ -18,7 +18,7 @@ This document provides step-by-step instructions for deploying the Fantasy Arena
 
 1. Click "New Project" on the Railway dashboard
 2. Select "Deploy from GitHub repo"
-3. Choose the `Fantasyarena` repository
+3. Choose this repository (Fantasy Arena / Fantasyarena)
 4. Railway will automatically detect it as a Node.js application
 
 ### 3. Add PostgreSQL Database

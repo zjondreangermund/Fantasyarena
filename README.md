@@ -50,50 +50,53 @@ Start the production server:
 npm start
 ```
 
-## Deploying to Railway
+## Cloud Deployment
 
-### Quick Deploy
+### Recommended: Deploy to Render.com (Free) 🆓
+
+Render.com offers a generous free tier perfect for getting your site online:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+**Why Render?**
+- ✅ Free tier (web service + PostgreSQL for 90 days)
+- ✅ No credit card required
+- ✅ Auto-deploy from GitHub
+- ✅ Simple setup with `render.yaml` blueprint
+
+**Quick Start:**
+1. Sign up at [render.com](https://render.com)
+2. Create new Blueprint from this repository
+3. Deploy automatically in ~10 minutes
+
+📖 **Full Guide**: See [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) for detailed instructions
+
+### Alternative: Deploy to Railway
+
+Railway is another great option (requires upgrading after free tier):
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new)
 
-### Manual Setup
+**Railway Setup:**
+1. Go to [railway.app](https://railway.app) and sign in
+2. Create "New Project" from GitHub repo
+3. Add PostgreSQL Database
+4. Deploy automatically
 
-1. **Create a new project on Railway**
-   - Go to [railway.app](https://railway.app) and sign in
-   - Click "New Project"
-   - Select "Deploy from GitHub repo" and choose this repository
+📖 **Full Guide**: See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for detailed instructions
 
-2. **Add PostgreSQL Database**
-   - In your Railway project, click "New"
-   - Select "Database" → "PostgreSQL"
-   - Railway will automatically provision a database and set the `DATABASE_URL` environment variable
+### Comparing Hosting Options
 
-3. **Configure Environment Variables**
-   Railway will automatically detect most settings from `nixpacks.toml`, but you can verify/add these variables in the Railway dashboard:
-   
-   - `DATABASE_URL` - Automatically set by Railway when you add PostgreSQL
-   - `NODE_ENV` - Set to `production`
-   - `PORT` - Railway automatically sets this (usually 3000 or dynamic)
-
-4. **Deploy**
-   - Railway will automatically build and deploy your application
-   - The build process runs `npm run build` as defined in `nixpacks.toml`
-   - The app starts with `npm start`
-
-5. **Push Database Schema**
-   After the first deployment, you need to initialize the database schema:
-   - Go to your Railway project
-   - Click on your service → "Settings" → "Service Variables"
-   - Copy the `DATABASE_URL` value
-   - Run locally:
-   ```bash
-   DATABASE_URL="<your-railway-db-url>" npm run db:push
-   ```
-   
-   Alternatively, you can run it in Railway's CLI or add it as a one-time deployment step.
+Not sure which platform to choose? See [HOSTING_ALTERNATIVES.md](HOSTING_ALTERNATIVES.md) for a detailed comparison of:
+- Render.com (recommended for free tier)
+- Railway
+- Fly.io
+- Vercel + External DB
+- And more...
 
 ### Configuration Files
 
+- `render.yaml` - Render.com Blueprint configuration (recommended)
 - `nixpacks.toml` - Railway/Nixpacks build configuration
 - `package.json` - Scripts for building and running the app
 - `.gitignore` - Files to exclude from git
@@ -119,28 +122,39 @@ npm start
 │   ├── index.cjs        # Bundled server
 │   └── public/          # Static client assets
 ├── package.json         # Dependencies and scripts
+├── render.yaml          # Render.com configuration
 └── nixpacks.toml        # Railway build configuration
 ```
 
 ## Troubleshooting
 
-### Build Fails on Railway
+### Build Fails
 
 - Check that all environment variables are set correctly
-- Review the build logs in Railway dashboard
+- Review the build logs in your hosting platform dashboard
 - Ensure `DATABASE_URL` is provided by the PostgreSQL service
+- Verify the build command includes `--legacy-peer-deps`
 
 ### Database Connection Errors
 
 - Verify `DATABASE_URL` is correctly formatted
 - Ensure the database schema has been pushed with `npm run db:push`
-- Check that the PostgreSQL service is running in Railway
+- Check that the PostgreSQL service is running
+- For Render: Use the "External Database URL" not the internal one
 
 ### App Doesn't Start
 
-- Check the Railway deployment logs
+- Check the deployment logs in your hosting dashboard
 - Verify the `dist/` folder was created during build
 - Ensure `NODE_ENV=production` is set
+- Check that all required environment variables are set
+
+### Cold Starts (Render Free Tier)
+
+- Free tier services sleep after 15 minutes of inactivity
+- First request after sleep takes ~30 seconds
+- Use a monitoring service like UptimeRobot to keep app awake
+- Or upgrade to paid tier for always-on service
 
 ## License
 

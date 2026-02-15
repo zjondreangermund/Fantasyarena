@@ -33,7 +33,7 @@ export async function initializeDatabase() {
     // Run drizzle-kit push to create schema
     console.log("Running drizzle-kit push to create database schema...");
     const { stdout, stderr } = await execAsync(
-      "npx drizzle-kit push --config Fantasy-Sports-Exchange/drizzle.config.ts --yes",
+      "npx drizzle-kit push --config Fantasy-Sports-Exchange/drizzle.config.ts",
       { 
         env: { ...process.env },
         cwd: process.cwd() 

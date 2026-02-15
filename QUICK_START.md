@@ -67,6 +67,23 @@ npm run db:push
 
 ## 🆘 Troubleshooting
 
+### Environment tab is empty - no variables showing
+**Problem:** Looking at Web Service → Environment tab and there are no environment variables
+
+**This is the issue!** Your app needs `NODE_ENV` and `DATABASE_URL` to run.
+
+**Quick Fix:**
+1. Click **"Add Environment Variable"** in the Environment tab
+2. Add: `NODE_ENV` = `production`
+3. Add: `DATABASE_URL` = [Copy from your database Connections tab]
+4. Save changes
+
+**If using Blueprint and variables should be automatic:**
+- Check Settings → Branch is set to `copilot/set-up-railway-deployment`
+- If wrong branch, change it and redeploy
+
+📖 **Complete guide:** [EMPTY_ENVIRONMENT_TAB.md](EMPTY_ENVIRONMENT_TAB.md) with step-by-step instructions
+
 ### App crashes with "DATABASE_URL must be set" error
 **Problem:** Database isn't connected or DATABASE_URL environment variable is missing
 

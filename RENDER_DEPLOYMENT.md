@@ -199,6 +199,24 @@ You can also trigger manual deploys:
 
 ## Troubleshooting
 
+### Environment Tab is Empty - No Variables Showing ⚠️
+
+**Problem**: You go to Web Service → Environment tab and there are NO environment variables listed.
+
+**This is a common issue!** Your app needs environment variables to run.
+
+**Quick Fix:**
+1. In the Environment tab, click **"Add Environment Variable"**
+2. Add: `NODE_ENV` = `production`  
+3. Add: `DATABASE_URL` = [Get from your database Connections tab]
+4. Save changes and restart service
+
+**If you used Blueprint (variables should be automatic):**
+- Go to Settings → Check Branch is `copilot/set-up-railway-deployment`
+- If wrong, change it and redeploy
+
+📖 **Complete Guide:** See [EMPTY_ENVIRONMENT_TAB.md](EMPTY_ENVIRONMENT_TAB.md) for detailed step-by-step instructions
+
 ### Build Fails with "vite: not found" or Peer Dependency Errors ⚠️
 
 **Problem**: Build fails with errors like:
@@ -237,9 +255,10 @@ sh: 1: vite: not found
 
 **Solutions**:
 - Check logs for error messages
-- Verify `DATABASE_URL` is set correctly
+- Verify `DATABASE_URL` is set correctly in Environment tab
 - Ensure database schema is initialized (`npm run db:push`)
 - Check that build created `dist/` folder
+- See [DATABASE_URL_ERROR.md](DATABASE_URL_ERROR.md) for database issues
 
 ### Database Connection Errors
 

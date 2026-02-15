@@ -32,7 +32,11 @@ The repository includes a `render.yaml` blueprint file that automatically sets u
    - Select "Blueprint"
    - Connect your GitHub account if not already connected
    - Select the `Fantasyarena` repository
-   - Click "Apply"
+   - **IMPORTANT:** Click "Advanced" before clicking "Apply"
+   - Change **Branch** to: `copilot/set-up-railway-deployment`
+   - Now click "Apply"
+   
+   > **Why?** All deployment configuration (render.yaml, build fixes) is in this branch. The main branch may not have these files yet.
 
 3. **Automatic Setup**
    Render will automatically:
@@ -195,15 +199,37 @@ You can also trigger manual deploys:
 
 ## Troubleshooting
 
-### Build Fails
+### Build Fails with "vite: not found" or Peer Dependency Errors ⚠️
+
+**Problem**: Build fails with errors like:
+```
+npm error ERESOLVE could not resolve
+sh: 1: vite: not found
+==> Build failed 😞
+```
+
+**Root Cause**: You're deploying from the `main` branch instead of `copilot/set-up-railway-deployment` branch.
+
+**Solution:**
+1. Go to your Web Service in Render dashboard
+2. Click **"Settings"**
+3. Scroll to **"Build & Deploy"** section
+4. Change **Branch** from `main` to `copilot/set-up-railway-deployment`
+5. Click **"Save Changes"**
+6. Render will automatically redeploy
+
+📖 **Complete Fix Guide:** See [TROUBLESHOOTING_RENDER_BUILD.md](TROUBLESHOOTING_RENDER_BUILD.md) for detailed steps
+
+### Build Fails with Other Dependency Errors
 
 **Problem**: Build fails with dependency errors
 
 **Solutions**:
 - Check build logs in Render dashboard
-- Verify `render.yaml` or build command includes `--legacy-peer-deps`
+- Verify build command includes `--legacy-peer-deps`
 - Ensure all dependencies are in `package.json`
 - Check Node.js version (should be 20.x)
+- Clear build cache in Render settings and retry
 
 ### Application Crashes on Start
 

@@ -18,7 +18,12 @@ Go to **[render.com](https://render.com)** and click "Get Started"
 2. Select **"Blueprint"**
 3. Connect your GitHub account (if not already connected)
 4. Select your **"Fantasyarena"** repository
-5. Click **"Apply"**
+5. **IMPORTANT:** Before clicking "Apply", click "Advanced" and:
+   - Change **Branch** to: `copilot/set-up-railway-deployment`
+   - (This branch has all the deployment configuration)
+6. Click **"Apply"**
+
+> **⚠️ Common Issue:** If you get build errors like "vite: not found" or peer dependency errors, you deployed from the wrong branch. See [TROUBLESHOOTING_RENDER_BUILD.md](TROUBLESHOOTING_RENDER_BUILD.md) for the fix!
 
 ### Step 3: Wait for Deploy (5-10 minutes)
 Render will automatically:
@@ -61,6 +66,16 @@ npm run db:push
 ---
 
 ## 🆘 Troubleshooting
+
+### Build fails with "vite: not found" or peer dependency errors
+**Problem:** You deployed from the wrong branch (main instead of copilot/set-up-railway-deployment)
+
+**Solution:**
+1. Go to your Web Service in Render → **Settings**
+2. Change **Branch** to `copilot/set-up-railway-deployment`
+3. Save and redeploy
+
+📖 **Full guide:** [TROUBLESHOOTING_RENDER_BUILD.md](TROUBLESHOOTING_RENDER_BUILD.md)
 
 ### "Blueprint not found"
 1. Make sure you pushed the latest code to GitHub

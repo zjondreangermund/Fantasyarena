@@ -26,6 +26,7 @@ export default defineConfig(async ({ command }): Promise<UserConfig> => {
   }
 
   return {
+    base: process.env.BASE_PATH || "/",
     plugins,
     resolve: {
       alias: {

@@ -2,7 +2,6 @@ services:
   # Web Service (your Node.js application)
   - type: web
     name: fantasy-arena-web
-    runtime: node
     plan: starter
     region: oregon
     branch: copilot/set-up-railway-deployment

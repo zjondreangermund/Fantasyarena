@@ -2,17 +2,29 @@
 
 ## The Situation
 
-Your Netlify build is failing with React peer dependency errors. **The fix is ready - it just needs to be applied!**
+Your Netlify build may be failing with one of two issues:
+1. **React peer dependency errors** (main branch)
+2. **esbuild version mismatch** (deployment branch)
 
-## Quickest Solution
+**Both fixes are ready!**
 
+## Which Issue Do You Have?
+
+### If Building from `main` Branch
 👉 **Open [QUICK_FIX_5_MINUTES.md](QUICK_FIX_5_MINUTES.md)** 👈
 
-Follow the 5 simple steps (no command line needed!) and your build will succeed.
+Follow 5 simple steps to upgrade React to v19.
 
 **Time:** 5 minutes  
-**Difficulty:** Easy  
-**Result:** ✅ Working Netlify deployment
+**Result:** ✅ React dependencies resolve
+
+### If Building from `copilot/set-up-railway-deployment` Branch  
+✅ **Already fixed!** Just pull latest changes.
+
+The `.nvmrc` file specifying Node.js 18 is already added.
+
+**Action:** Clear Netlify build cache and redeploy.  
+**Result:** ✅ esbuild version matches
 
 ---
 
@@ -29,13 +41,18 @@ Follow the 5 simple steps (no command line needed!) and your build will succeed.
 
 ---
 
-## What's Wrong (In One Sentence)
+## What's Wrong
 
-Netlify is building from `main` branch which has React 18.3.1, but your dependencies require React 19.
+**Issue 1 (main branch):**  
+React 18.3.1 doesn't satisfy peer dependencies requiring React 19.
 
-## What You Need to Do (In One Sentence)
+**Issue 2 (deployment branch):**  
+esbuild binary version mismatch with Node.js 22.
 
-Update `package.json` on the main branch to use React 19 instead of React 18.
+## What's Fixed
+
+**For Issue 1:** React 19 upgrade documented in multiple guides  
+**For Issue 2:** ✅ `.nvmrc` file added (specifies Node 18)
 
 ## What Happens After You Fix It
 
@@ -48,14 +65,31 @@ Update `package.json` on the main branch to use React 19 instead of React 18.
 
 ## Choose Your Path
 
-**I want to fix it RIGHT NOW (5 min):**
-→ [QUICK_FIX_5_MINUTES.md](QUICK_FIX_5_MINUTES.md)
+**Building from main branch? (React issue)**
+→ [QUICK_FIX_5_MINUTES.md](QUICK_FIX_5_MINUTES.md) - Fix in 5 minutes
 
-**I want to understand what I'm doing (10 min):**
-→ [URGENT_NETLIFY_FIX.md](URGENT_NETLIFY_FIX.md)
+**Building from deployment branch? (esbuild issue)**  
+→ [ESBUILD_VERSION_MISMATCH_FIX.md](ESBUILD_VERSION_MISMATCH_FIX.md) - Already fixed, just pull and clear cache
 
-**I want all the details (15+ min):**
-→ [NETLIFY_BRANCH_FIX.md](NETLIFY_BRANCH_FIX.md)
+**Want all the details?**
+→ [DEPLOYMENT_COMPLETE_SUMMARY.md](DEPLOYMENT_COMPLETE_SUMMARY.md) - Complete documentation
+
+---
+
+## Quick Actions
+
+**For main branch (React issue):**
+1. Open package.json
+2. Change React to 19.0.0
+3. Move build tools to dependencies
+4. Commit and push
+5. ✅ Done!
+
+**For deployment branch (esbuild issue):**
+1. `git pull origin copilot/set-up-railway-deployment`
+2. Netlify Dashboard → Clear build cache
+3. Trigger deploy
+4. ✅ Done!
 
 ---
 

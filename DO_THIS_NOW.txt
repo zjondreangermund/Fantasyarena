@@ -1,0 +1,40 @@
+========================================
+     STOP READING DOCUMENTATION
+        DO ONE OF THESE TWO THINGS
+========================================
+
+OPTION 1 (EASIEST - 2 MINUTES):
+  1. Open Netlify Dashboard
+  2. Go to Site Settings > Build & deploy
+  3. Change Production branch to: copilot/set-up-railway-deployment
+  4. Click Save
+  5. Click "Trigger deploy"
+  
+  DONE. Your site will build successfully.
+
+========================================
+
+OPTION 2 (PERMANENT - 5 MINUTES):
+  1. Open GitHub
+  2. Go to your repository
+  3. Click "Pull requests"
+  4. Click "New pull request"
+  5. Set: main ← copilot/set-up-railway-deployment
+  6. Click "Create pull request"
+  7. Click "Merge pull request"
+  
+  DONE. Netlify will auto-deploy from main.
+
+========================================
+
+WHY ISN'T IT WORKING?
+  - All fixes are on copilot/set-up-railway-deployment branch
+  - Netlify is building from main branch
+  - Main branch doesn't have the fixes
+  - That's it. That's the only problem.
+
+========================================
+
+IGNORE ALL OTHER DOCUMENTATION.
+JUST DO ONE OF THE TWO OPTIONS ABOVE.
+========================================

@@ -1,11 +1,14 @@
 services:
   # Web Service (your Node.js application)
   - type: web
-    name: fantasy-arena
+    name: fantasy-arena-web
     runtime: node
-    plan: free
+    plan: starter
+    region: oregon
+    branch: copilot/set-up-railway-deployment
     buildCommand: npm install --legacy-peer-deps && npm run build && npm run db:push
     startCommand: npm start
+    autoDeploy: false
     envVars:
       - key: NODE_ENV
         value: production
@@ -17,6 +20,7 @@ services:
 databases:
   # PostgreSQL Database
   - name: fantasy-arena-db
-    plan: free
+    plan: starter
+    region: oregon
     databaseName: fantasyarena
     user: fantasyarena

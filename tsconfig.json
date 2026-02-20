@@ -1,0 +1,3 @@
+{
+  "extends": "./Fantasy-Sports-Exchange/tsconfig.json"
+}

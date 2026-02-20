@@ -1,40 +1,50 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import type { UserConfig } from "vite";
+import { fileURLToPath } from "url";
 
-export default defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
-  ],
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig(async ({ command }): Promise<UserConfig> => {
+  const plugins = [react()];
+
+  if (command === "serve") {
+    const { default: runtimeErrorOverlay } = await import(
+      "@replit/vite-plugin-runtime-error-modal"
+    );
+    plugins.push(runtimeErrorOverlay());
+
+    if (process.env.REPL_ID !== undefined) {
+      const { cartographer } = await import(
+        "@replit/vite-plugin-cartographer"
+      );
+      const { devBanner } = await import("@replit/vite-plugin-dev-banner");
+
+      plugins.push(cartographer(), devBanner());
+    }
+  }
+
+  return {
+    base: process.env.BASE_PATH || "/",
+    plugins,
+    resolve: {
+      alias: {
+        "@": path.resolve(rootDir, "client", "src"),
+        "@shared": path.resolve(rootDir, "shared"),
+        "@assets": path.resolve(rootDir, "attached_assets"),
+      },
     },
-  },
-  root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+    root: path.resolve(rootDir, "client"),
+    build: {
+      outDir: path.resolve(rootDir, "dist/public"),
+      emptyOutDir: true,
     },
-  },
+    server: {
+      fs: {
+        strict: true,
+        deny: ["**/.*"],
+      },
+    },
+  };
 });

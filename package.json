@@ -4,12 +4,12 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev": "cd Fantasy-Sports-Exchange && NODE_ENV=development tsx server/index.ts",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
-    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws --external:connect-pg-simple --external:express-session",
-    "start": "NODE_ENV=production node dist/index.cjs",
-    "check": "tsc",
+    "build:client": "cd Fantasy-Sports-Exchange && vite build",
+    "build:server": "cd Fantasy-Sports-Exchange && esbuild server/index.ts --bundle --platform=node --target=node20 --format=cjs --define:process.env.NODE_ENV=\\\"production\\\" --outfile=dist/index.cjs --external:pg --external:drizzle-orm --external:express --external:openid-client --external:passport --external:ws --external:connect-pg-simple --external:express-session",
+    "start": "cd Fantasy-Sports-Exchange && NODE_ENV=production node dist/index.cjs",
+    "check": "cd Fantasy-Sports-Exchange && tsc -p tsconfig.json",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {

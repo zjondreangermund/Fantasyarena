@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 // Fixed: @/lib -> ../lib
 import { apiRequest, queryClient } from "../lib/queryClient";
 // Fixed: @/components -> ../components
-import PlayerCard from "../components/threeplayercards";
+import PlayerCard from "../components/PlayerCard";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -23,7 +23,7 @@ export default function CollectionPage() {
   );
 
   const { data: cards, isLoading } = useQuery<PlayerCardWithPlayer[]>({
-    queryKey: ["/api/cards"],
+    queryKey: ["/api/user/cards"],
   });
 
   const { data: lineupData } = useQuery<{
